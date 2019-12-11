@@ -21,6 +21,7 @@ This script creates the vehicle trajectory based on points marked in the map in 
 
 pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size=10)
 path_pub = rospy.Publisher('reference_path/path', Path, queue_size=10)
+pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size=10)
 
 def simple_trajectory():
 
@@ -40,6 +41,17 @@ def simple_trajectory():
     ln = ln[0]
     print(ln)
 
+    pthm = Marker()
+    pthm.header.frame_id = 'map'
+    pthm.type = 8
+    pthm.scale.x = 0.05
+    pthm.scale.y = 0.05
+    pthm.color.a = 1.0
+    pthm.color.r = 0.1
+    pthm.color.g = 1.0
+    pthm.color.b = 0.2
+    pthm.points = []
+
     for i in range(0,ln):
         ps = PoseStamped()
         ps.header.frame_id = 'map'
@@ -48,15 +60,24 @@ def simple_trajectory():
         ps.pose.position.z = 0
         poses.append(ps)
 
+        p = Point()
+        p.x = xi[i]
+        p.y = yi[i]
+        p.z = 0
+        pthm.points.append(p)
+
     pth = Path()
     pth.header.frame_id = 'map'
     pth.poses = poses
+
+    del pthm.points[-1]
 
     # Publisher
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
         rate.sleep()
         path_pub.publish(pth)
+        pathm_pub.publish(pthm)
 
     return
 
