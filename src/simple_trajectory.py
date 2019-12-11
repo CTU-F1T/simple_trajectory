@@ -32,7 +32,7 @@ import numpy as np
 import math
 
 # Math engine / interpolation
-from scipy.interpolate import splprep, splev, interp1d
+from scipy.interpolate import splprep, splev, interp1d, CubicSpline
 
 # Plot
 import matplotlib.pyplot as plt
@@ -196,6 +196,11 @@ def simple_trajectory():
     """Interpolate received points by a cubic curve.
 
     Note: Calling this will block the callback.
+
+    Source:
+    center_trajectory.py:interpolate_points() by David Kopecky
+    https://stackoverflow.com/questions/52014197/how-to-interpolate-a-2d-curve-in-python
+    profile_trajectory/profile_trajectory.py:interpolate_points()
     """
     global _trajectory_points
 
@@ -203,10 +208,20 @@ def simple_trajectory():
     i = np.arange(len(_trajectory_points))
 
     # 5x the original number of points
-    interp_i = np.linspace(0, i.max(), 80 * i.max())
+    #interp_i = np.linspace(0, i.max(), 80 * i.max())
 
-    xi = interp1d(i, x, kind='cubic')(interp_i)
-    yi = interp1d(i, y, kind='cubic')(interp_i)
+    #xi = interp1d(i, x, kind='cubic')(interp_i)
+    #yi = interp1d(i, y, kind='cubic')(interp_i)
+
+    distance = np.cumsum( np.sqrt(np.sum( np.diff(_trajectory_points, axis=0)**2, axis=1 )) )
+    distance = np.insert(distance, 0, 0)/distance[-1]
+
+    alpha = np.linspace(0, 1, 440)
+
+    ipol = CubicSpline(distance, _trajectory_points, axis=0, bc_type="periodic")(alpha)
+
+    xi = ipol[:, 0]
+    yi = ipol[:, 1]
 
     poses = []
     ln = xi.shape
