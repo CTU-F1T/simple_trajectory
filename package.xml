@@ -21,4 +21,5 @@
   <run_depend>geometry_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
 </package>

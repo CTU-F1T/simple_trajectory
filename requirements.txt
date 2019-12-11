@@ -1,6 +1,4 @@
 # Versions are specified to ensure compatibility with Py2
 numpy==1.16.0
 scipy==1.2.2
-# Hough Transform
-scikit-image==0.14.5
 matplotlib==2.2.4
