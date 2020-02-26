@@ -183,9 +183,9 @@ _trajectory_done = False
 
 
 # Publishers
-pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size=10)
-path_pub = rospy.Publisher('reference_path/path', Path, queue_size=10)
-pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size=10)
+pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size = 1, latch = True)
+path_pub = rospy.Publisher('reference_path/path', Path, queue_size = 1, latch = True)
+pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size = 1, latch = True)
 
 
 ######################
