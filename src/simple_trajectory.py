@@ -333,7 +333,7 @@ def clicked_point(data):
     else:
         _trajectory_points = np.vstack((_trajectory_points, np.array([data.point.x,data.point.y])))
 
-    print(_trajectory_points)
+    print(str(_trajectory_points.tolist()))
 
     #Marker message
     marker = Marker()
