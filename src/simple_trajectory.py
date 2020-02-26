@@ -259,12 +259,8 @@ def simple_trajectory():
 
     del pthm.points[-1]
 
-    # Publisher
-    rate = rospy.Rate(10)  # 10hz
-    while not rospy.is_shutdown():
-        rate.sleep()
-        path_pub.publish(pth)
-        pathm_pub.publish(pthm)
+    path_pub.publish(pth)
+    pathm_pub.publish(pthm)
 
     return
 
