@@ -1,0 +1,11 @@
+[<decisionandcontrol>simple_trajectory|
+Generate path by selecting points
+using GUI of rViz.
+]
+
+[<state> /clicked_point|geometry_msgs/PointStamped]->[simple_trajectory]
+[<state> /map|nav_msgs/OccupancyGrid]->[simple_trajectory]
+[simple_trajectory]->[<state> /trajectory_points|visualization_msgs/Marker]
+[simple_trajectory]->[<state> /reference_path/path|nav_msgs/Path]
+[simple_trajectory]->[<state> /reference_path/marker|visualization_msgs/Marker]
+
