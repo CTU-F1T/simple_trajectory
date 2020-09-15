@@ -192,6 +192,8 @@ _bounds = None
 _trajectory_points = []
 _trajectory_done = False
 TRAJECTORY_DISTANCE = 5
+_picking_up = False
+_pick_up_i = 0
 
 
 # Publishers
@@ -420,44 +422,54 @@ def clicked_point(data):
     Arguments:
     data -- received point, defined by geometry_msgs.msg/PointStamped
     """
-    global _trajectory_done, _trajectory_points
+    global _trajectory_done, _trajectory_points, _picking_up, _pick_up_i
 
-    if _trajectory_done:
-        # Find closest two consecutive points
-        dists = numpy.sqrt(
-                    numpy.sum(
-                        numpy.power(
-                            _trajectory_points - numpy.asarray([data.point.x, data.point.y]),
-                            2
-                        ),
-                        axis = 1
+    if not _picking_up:
+        if _trajectory_done:
+            # Find closest two consecutive points
+            dists = numpy.sqrt(
+                        numpy.sum(
+                            numpy.power(
+                                _trajectory_points - numpy.asarray([data.point.x, data.point.y]),
+                                2
+                            ),
+                            axis = 1
+                        )
                     )
-                )
 
-        consdists = dists + numpy.roll(dists, 1)
-        closest_point_i = numpy.argmin(consdists)
+            # If too close to different point, we want to pick it up!
+            if numpy.min(dists) < 0.15:
+                _pick_up_i = numpy.argmin(dists)
+                _picking_up = True
+            else:
+                consdists = dists + numpy.roll(dists, 1)
+                closest_point_i = numpy.argmin(consdists)
 
-        # Now we have index of end of the gap -> we can put this point on this index
-        _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, numpy.asarray([data.point.x, data.point.y]), axis = 0)
-
-    if len(_trajectory_points) == 0:
-        # First element
-        _trajectory_points = numpy.array([[data.point.x,data.point.y]])
+                # Now we have index of end of the gap -> we can put this point on this index
+                _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, numpy.asarray([data.point.x, data.point.y]), axis = 0)
     else:
-        _trajectory_points = numpy.vstack((_trajectory_points, numpy.array([data.point.x,data.point.y])))
+        _trajectory_points[_pick_up_i, :] = numpy.asarray([data.point.x, data.point.y])
+        _picking_up = False
 
-    if len(_trajectory_points) > 2:
-        first_point = _trajectory_points[0]
-        dist = math.sqrt(math.pow(first_point[0]-data.point.x,2) + math.pow(first_point[1]-data.point.y,2))
-        print(dist)
-        if dist < 0.15 or _trajectory_done:
-            print("trajectory done")
-            _trajectory_done = True
-            _trajectory_points = numpy.vstack((_trajectory_points[0:-1], _trajectory_points[0]))
-            simple_trajectory()
-            _trajectory_points = _trajectory_points[0:-1]
+    if not _picking_up:
+        if len(_trajectory_points) == 0:
+            # First element
+            _trajectory_points = numpy.array([[data.point.x,data.point.y]])
+        else:
+            _trajectory_points = numpy.vstack((_trajectory_points, numpy.array([data.point.x,data.point.y])))
 
-    print(str(_trajectory_points.tolist()))
+        if len(_trajectory_points) > 2:
+            first_point = _trajectory_points[0]
+            dist = math.sqrt(math.pow(first_point[0]-data.point.x,2) + math.pow(first_point[1]-data.point.y,2))
+            print(dist)
+            if dist < 0.15 or _trajectory_done:
+                print("trajectory done")
+                _trajectory_done = True
+                _trajectory_points = numpy.vstack((_trajectory_points[0:-1], _trajectory_points[0]))
+                simple_trajectory()
+                _trajectory_points = _trajectory_points[0:-1]
+
+        print(str(_trajectory_points.tolist()))
 
     #Marker message
     marker = Marker()
@@ -471,13 +483,16 @@ def clicked_point(data):
     points = []
     colors = []
 
-    for p in _trajectory_points:
+    for i, p in enumerate(_trajectory_points):
         pnt = Point()
         pnt.x = p[0]
         pnt.y = p[1]
         pnt.z = 0
         points.append(pnt)
-        colors.append(ColorRGBA(1,0,0,1))
+        if _picking_up and i == _pick_up_i:
+            colors.append(ColorRGBA(1,1,0,1))
+        else:
+            colors.append(ColorRGBA(1,0,0,1))
 
     marker.colors = colors
     marker.points = points
