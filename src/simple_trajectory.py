@@ -413,33 +413,6 @@ def map_callback(map):
 
     _map_loaded = True
 
-    return
-
-    if not _map_loaded:
-        occupancy_grid = numpy.array(map.data).reshape((map.info.height, map.info.width))
-        resolution = map.info.resolution
-        width = map.info.width
-        height = map.info.height
-        occupancy_grid_blown = numpy.zeros((width, height))
-        _origin = map.info.origin
-
-        # Occupancy grid legend:
-        # -1 = unexplored
-        # 0 = free
-        # 100 = obstacle
-        for row in range(0,height):
-            for col in range(0,width):
-                pass
-
-        # Sort
-        for row in range(0,height):
-            for col in range(0,width):
-                break
-
-        _map_loaded = True
-
-    return
-
 
 def clicked_point(data):
     """Register a point passed using rViz 'Publish Point' function.
