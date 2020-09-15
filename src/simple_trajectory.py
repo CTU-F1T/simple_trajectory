@@ -28,7 +28,7 @@
 import rospy
 
 # Math engine
-import numpy as np
+import numpy
 import math
 
 # Math engine / interpolation
@@ -205,18 +205,19 @@ def simple_trajectory():
     global _trajectory_points
 
     x, y = _trajectory_points.T
-    i = np.arange(len(_trajectory_points))
+    i = numpy.arange(len(_trajectory_points))
 
-    # 5x the original number of points
-    #interp_i = np.linspace(0, i.max(), 80 * i.max())
+    # 5x the original number of pointsf
+    #interp_i = numpy.linspace(0, i.max(), 80 * i.max())
 
     #xi = interp1d(i, x, kind='cubic')(interp_i)
     #yi = interp1d(i, y, kind='cubic')(interp_i)
 
-    distance = np.cumsum( np.sqrt(np.sum( np.diff(_trajectory_points, axis=0)**2, axis=1 )) )
-    distance = np.insert(distance, 0, 0)/distance[-1]
+    distance = numpy.cumsum( numpy.sqrt(numpy.sum( numpy.diff(_trajectory_points, axis=0)**2, axis=1 )) )
+    distance = numpy.insert(distance, 0, 0)/distance[-1]
 
-    alpha = np.linspace(0, 1, 440)
+    # TODO: Make this as a parameter.
+    alpha = numpy.linspace(0, 1, 440)
 
     ipol = CubicSpline(distance, _trajectory_points, axis=0, bc_type="periodic")(alpha)
 
@@ -281,11 +282,11 @@ def map_callback(map):
     global _map_loaded
 
     if not _map_loaded:
-        occupancy_grid = np.array(map.data).reshape((map.info.height, map.info.width))
+        occupancy_grid = numpy.array(map.data).reshape((map.info.height, map.info.width))
         resolution = map.info.resolution
         width = map.info.width
         height = map.info.height
-        occupancy_grid_blown = np.zeros((width, height))
+        occupancy_grid_blown = numpy.zeros((width, height))
 
         # Occupancy grid legend:
         # -1 = unexplored
@@ -323,15 +324,15 @@ def clicked_point(data):
         if dist < 0.15:
             print("trajectory done")
             _trajectory_done = True
-            _trajectory_points = np.vstack((_trajectory_points, _trajectory_points[0]))
+            _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
             simple_trajectory()
             return
 
     if len(_trajectory_points) == 0:
         # First element
-        _trajectory_points = np.array([[data.point.x,data.point.y]])
+        _trajectory_points = numpy.array([[data.point.x,data.point.y]])
     else:
-        _trajectory_points = np.vstack((_trajectory_points, np.array([data.point.x,data.point.y])))
+        _trajectory_points = numpy.vstack((_trajectory_points, numpy.array([data.point.x,data.point.y])))
 
     print(str(_trajectory_points.tolist()))
 
