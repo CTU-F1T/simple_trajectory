@@ -429,11 +429,12 @@ def clicked_point(data):
         first_point = _trajectory_points[0]
         dist = math.sqrt(math.pow(first_point[0]-data.point.x,2) + math.pow(first_point[1]-data.point.y,2))
         print(dist)
-        if dist < 0.15:
+        if dist < 0.15 or _trajectory_done:
             print("trajectory done")
             _trajectory_done = True
             _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
             simple_trajectory()
+            _trajectory_points = _trajectory_points[0:-1]
             return
 
     if len(_trajectory_points) == 0:
