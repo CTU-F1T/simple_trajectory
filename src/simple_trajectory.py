@@ -223,7 +223,7 @@ def simple_trajectory():
     https://stackoverflow.com/questions/52014197/how-to-interpolate-a-2d-curve-in-python
     profile_trajectory/profile_trajectory.py:interpolate_points()
     """
-    global _trajectory_points
+    global _trajectory_points, _map_loaded, _map, _info, _bounds
 
     x, y = _trajectory_points.T
     i = numpy.arange(len(_trajectory_points))
@@ -283,6 +283,39 @@ def simple_trajectory():
 
     path_pub.publish(pth)
     pathm_pub.publish(pthm)
+
+
+    # Available surroundings
+    # Store path to map and inflate it
+    if _map_loaded:
+        n_map = numpy.zeros((_info.height, _info.width))
+
+        for i in range(0,ln):
+            _x = int( ( xi[i] - _info.origin.position.x ) / _info.resolution )
+            _y = int( ( yi[i] - _info.origin.position.y ) / _info.resolution )
+
+            # Inflate
+            for __x in range(-5, 6):
+                for __y in range(-5, 6):
+                    if __x**2 + __y**2 <= TRAJECTORY_DISTANCE**2:
+                        n_map[_y + __y, _x + __x] = 1
+
+        gc = GridCells()
+        gc.header.frame_id = 'map'
+        gc.cell_width = 0.05
+        gc.cell_height = 0.05
+        gc.cells = []
+
+        for _i in range(_info.width):
+            for _j in range(_info.height):
+                if n_map[_j, _i] == 1:
+                    p2 = Point()
+                    p2.x = _info.origin.position.x + _i * _info.resolution
+                    p2.y = _info.origin.position.y + _j * _info.resolution
+                    p2.z = 0
+                    gc.cells.append(p2)
+
+        infgc_pub.publish(gc)
 
     return
 
