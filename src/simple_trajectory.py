@@ -391,11 +391,11 @@ def map_callback(map):
     mkr.color.b = 0.2
     mkr.points = []
 
-    gc = GridCells()
-    gc.header = map.header
-    gc.cell_width = map.info.resolution
-    gc.cell_height = map.info.resolution
-    gc.cells = []
+    #gc = GridCells()
+    #gc.header = map.header
+    #gc.cell_width = map.info.resolution
+    #gc.cell_height = map.info.resolution
+    #gc.cells = []
 
     for _x in range(_info.width):
         for _y in range(_info.height):
@@ -405,10 +405,10 @@ def map_callback(map):
                 p.y = _info.origin.position.y + _y * map.info.resolution
                 p.z = 0
                 mkr.points.append(p)
-                gc.cells.append(p)
+                #gc.cells.append(p)
 
     inf_pub.publish(mkr)
-    infgc_pub.publish(gc)
+    #infgc_pub.publish(gc)
 
 
     _map_loaded = True
