@@ -46,6 +46,14 @@ from std_msgs.msg import ColorRGBA
 #: float32 b
 #: float32 a
 
+# GridCells
+from nav_msgs.msg import GridCells
+# an array of cells in a 2D grid
+#: Header header
+#: float32 cell_width
+#: float32 cell_height
+#: geometry_msgs/Point[] cells
+
 # Header
 from std_msgs.msg import Header
 # Standard metadata for higher-level stamped data types.
@@ -183,12 +191,22 @@ _info = None
 _bounds = None
 _trajectory_points = []
 _trajectory_done = False
+TRAJECTORY_DISTANCE = 5
 
 
 # Publishers
 pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size = 1, latch = True)
 path_pub = rospy.Publisher('reference_path/path', Path, queue_size = 1, latch = True)
 pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size = 1, latch = True)
+map_pub = rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
+inf_pub = rospy.Publisher('reference_path/infmarker', Marker, queue_size = 1, latch = True)
+infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 1, latch = True)
+
+######################
+# Map related functions
+######################
+
+
 
 
 ######################
@@ -324,6 +342,45 @@ def map_callback(map):
 
     print _bounds
 
+    map.info = _info
+    map.data = list(_map.flatten())
+
+    map_pub.publish(map)
+
+    mkr = Marker()
+    mkr.header.frame_id = 'map'
+    mkr.type = 8
+    mkr.scale.x = 0.05
+    mkr.scale.y = 0.05
+    mkr.color.a = 1.0
+    mkr.color.r = 0.1
+    mkr.color.g = 1.0
+    mkr.color.b = 0.2
+    mkr.points = []
+
+    gc = GridCells()
+    gc.header = map.header
+    gc.cell_width = map.info.resolution
+    gc.cell_height = map.info.resolution
+    gc.cells = []
+
+    for _x in range(_info.width):
+        for _y in range(_info.height):
+            if _map[_y, _x] == 0:
+                p = Point()
+                p.x = _info.origin.position.x + _x * map.info.resolution
+                p.y = _info.origin.position.y + _y * map.info.resolution
+                p.z = 0
+                mkr.points.append(p)
+                gc.cells.append(p)
+
+    inf_pub.publish(mkr)
+    infgc_pub.publish(gc)
+
+
+    _map_loaded = True
+
+    return
 
     if not _map_loaded:
         occupancy_grid = numpy.array(map.data).reshape((map.info.height, map.info.width))
