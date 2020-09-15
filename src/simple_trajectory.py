@@ -440,6 +440,12 @@ def clicked_point(data):
         # Now we have index of end of the gap -> we can put this point on this index
         _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, numpy.asarray([data.point.x, data.point.y]), axis = 0)
 
+    if len(_trajectory_points) == 0:
+        # First element
+        _trajectory_points = numpy.array([[data.point.x,data.point.y]])
+    else:
+        _trajectory_points = numpy.vstack((_trajectory_points, numpy.array([data.point.x,data.point.y])))
+
     if len(_trajectory_points) > 2:
         first_point = _trajectory_points[0]
         dist = math.sqrt(math.pow(first_point[0]-data.point.x,2) + math.pow(first_point[1]-data.point.y,2))
@@ -447,16 +453,9 @@ def clicked_point(data):
         if dist < 0.15 or _trajectory_done:
             print("trajectory done")
             _trajectory_done = True
-            _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+            _trajectory_points = numpy.vstack((_trajectory_points[0:-1], _trajectory_points[0]))
             simple_trajectory()
             _trajectory_points = _trajectory_points[0:-1]
-            return
-
-    if len(_trajectory_points) == 0:
-        # First element
-        _trajectory_points = numpy.array([[data.point.x,data.point.y]])
-    else:
-        _trajectory_points = numpy.vstack((_trajectory_points, numpy.array([data.point.x,data.point.y])))
 
     print(str(_trajectory_points.tolist()))
 
