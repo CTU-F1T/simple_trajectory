@@ -423,7 +423,22 @@ def clicked_point(data):
     global _trajectory_done, _trajectory_points
 
     if _trajectory_done:
-        return
+        # Find closest two consecutive points
+        dists = numpy.sqrt(
+                    numpy.sum(
+                        numpy.power(
+                            _trajectory_points - numpy.asarray([data.point.x, data.point.y]),
+                            2
+                        ),
+                        axis = 1
+                    )
+                )
+
+        consdists = dists + numpy.roll(dists, 1)
+        closest_point_i = numpy.argmin(consdists)
+
+        # Now we have index of end of the gap -> we can put this point on this index
+        _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, numpy.asarray([data.point.x, data.point.y]), axis = 0)
 
     if len(_trajectory_points) > 2:
         first_point = _trajectory_points[0]
