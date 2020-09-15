@@ -178,6 +178,9 @@ from geometry_msgs.msg import PoseStamped
 # Global variables
 _map_loaded = False
 _map = []
+_map = None
+_info = None
+_bounds = None
 _trajectory_points = []
 _trajectory_done = False
 
@@ -279,7 +282,48 @@ def map_callback(map):
     Note: This is not used at all. Maybe in the future it should check that
     the generated trajectory is within the bounds.
     """
-    global _map_loaded
+    global _map_loaded, _map, _info, _bounds
+
+    # Load map
+    _map = numpy.array(map.data).reshape((map.info.height, map.info.width))
+
+    # Save info
+    _info = map.info
+
+    # Cut the map
+    # Find first and last occurence of a non-(-1) value
+    x_lim = numpy.take(
+                numpy.where(
+                    numpy.max(_map, axis=0)
+                    !=
+                    -1
+                )[0],
+                [0, -1]
+            )
+
+    y_lim = numpy.take(
+                numpy.where(
+                    numpy.max(_map, axis=1)
+                    !=
+                    -1
+                )[0],
+                [0, -1]
+            )
+
+    _map = _map[y_lim[0]:y_lim[1], x_lim[0]:x_lim[1]]
+
+
+    # Update metadata
+    _info.height = _map.shape[0]
+    _info.width = _map.shape[1]
+    _info.origin.position.x += x_lim[0] * map.info.resolution
+    _info.origin.position.y += y_lim[0] * map.info.resolution
+
+    # xmin, xmax; ymin, ymax
+    _bounds = [_info.origin.position.x, _info.origin.position.x + _info.width * map.info.resolution, _info.origin.position.y, _info.origin.position.y + _info.height * map.info.resolution ]
+
+    print _bounds
+
 
     if not _map_loaded:
         occupancy_grid = numpy.array(map.data).reshape((map.info.height, map.info.width))
@@ -287,6 +331,7 @@ def map_callback(map):
         width = map.info.width
         height = map.info.height
         occupancy_grid_blown = numpy.zeros((width, height))
+        _origin = map.info.origin
 
         # Occupancy grid legend:
         # -1 = unexplored
