@@ -547,6 +547,8 @@ def clicked_point(data):
         points.append(pnt)
         if _picking_up and i == _pick_up_i:
             colors.append(ColorRGBA(1,1,0,1))
+        elif not _trajectory_done and i == 0:
+            colors.append(ColorRGBA(1,0,1,1))
         else:
             colors.append(ColorRGBA(1,0,0,1))
 
