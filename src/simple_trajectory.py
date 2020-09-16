@@ -301,8 +301,32 @@ def simple_trajectory():
             for __x in range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1):
                 for __y in range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1):
                     if __x**2 + __y**2 <= TRAJECTORY_DISTANCE**2:
-                        if _map_inflated[_y + __y, _x + __x] == 0:
-                            n_map[_y + __y, _x + __x] = 1
+                        if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
+                            if _map_inflated[_y + __y, _x + __x] == 0:
+                                n_map[_y + __y, _x + __x] = 1
+
+        # Color the map and forget all disjoint regions (disjoint from the path)
+        for i in range(0, ln):
+            _x = int( ( xi[i] - _info.origin.position.x ) / _info.resolution )
+            _y = int( ( yi[i] - _info.origin.position.y ) / _info.resolution )
+
+            if _y >= 0 and _y < _info.height and _x >= 0 and _x < _info.width:
+                if n_map[_y, _x] == 1 and _map_inflated[_y, _x] == 0:
+                    n_map[_y, _x] = 2
+
+        colored_cells = True
+
+        while colored_cells:
+            colored_cells = False
+            for _i in range(_info.width):
+                for _j in range(_info.height):
+                    if n_map[_j, _i] == 1:
+                        if (_j > 0 and n_map[_j - 1, _i] == 2) or \
+                           (_j < _info.height - 1 and n_map[_j + 1, _i] == 2) or \
+                           (_i > 0 and n_map[_j, _i - 1] == 2) or \
+                           (_i < _info.width - 1 and n_map[_j, _i + 1] == 2):
+                            n_map[_j, _i] = 2
+                            colored_cells = True
 
         gc = GridCells()
         gc.header.frame_id = 'map'
@@ -312,7 +336,7 @@ def simple_trajectory():
 
         for _i in range(_info.width):
             for _j in range(_info.height):
-                if n_map[_j, _i] == 1:
+                if n_map[_j, _i] == 2:
                     p2 = Point()
                     p2.x = _info.origin.position.x + _i * _info.resolution
                     p2.y = _info.origin.position.y + _j * _info.resolution
