@@ -192,6 +192,7 @@ _bounds = None
 _trajectory_points = []
 _trajectory_done = False
 TRAJECTORY_DISTANCE = 5
+INFLATE_DISTANCE = 5
 _picking_up = False
 _pick_up_i = 0
 
@@ -335,7 +336,7 @@ def map_callback(map):
     Note: This is not used at all. Maybe in the future it should check that
     the generated trajectory is within the bounds.
     """
-    global _map_loaded, _map, _info, _bounds
+    global _map_loaded, _map, _info, _bounds, _map_inflated
 
     # Load map
     _map = numpy.array(map.data).reshape((map.info.height, map.info.width))
@@ -377,8 +378,21 @@ def map_callback(map):
 
     print _bounds
 
+    # Inflate map
+    _map_inflated = numpy.zeros((_info.height, _info.width))
+
+    for _x in range(_info.width):
+        for _y in range(_info.height):
+                if _map[_y, _x] == 100:
+                    # Inflate
+                    for __x in range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1):
+                        for __y in range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1):
+                            if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
+                                if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
+                                    _map_inflated[_y + __y, _x + __x] = 100
+
     map.info = _info
-    map.data = list(_map.flatten())
+    map.data = list(_map_inflated.flatten())
 
     map_pub.publish(map)
 
@@ -401,7 +415,7 @@ def map_callback(map):
 
     for _x in range(_info.width):
         for _y in range(_info.height):
-            if _map[_y, _x] == 0:
+            if _map_inflated[_y, _x] == 0:
                 p = Point()
                 p.x = _info.origin.position.x + _x * map.info.resolution
                 p.y = _info.origin.position.y + _y * map.info.resolution
