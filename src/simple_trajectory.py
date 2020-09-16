@@ -471,52 +471,60 @@ def clicked_point(data):
     """
     global _trajectory_done, _trajectory_points, _picking_up, _pick_up_i
 
-    if not _picking_up:
-        if _trajectory_done:
-            # Find closest two consecutive points
-            dists = numpy.sqrt(
-                        numpy.sum(
-                            numpy.power(
-                                _trajectory_points - numpy.asarray([data.point.x, data.point.y]),
-                                2
-                            ),
-                            axis = 1
-                        )
-                    )
+    cpoint = numpy.asarray([data.point.x, data.point.y])
 
-            # If too close to different point, we want to pick it up!
-            if numpy.min(dists) < 0.15:
-                _pick_up_i = numpy.argmin(dists)
-                _picking_up = True
-            else:
-                consdists = dists + numpy.roll(dists, 1)
-                closest_point_i = numpy.argmin(consdists)
+    if len(_trajectory_points) == 0:
+        _trajectory_points = numpy.array([cpoint])
 
-                # Now we have index of end of the gap -> we can put this point on this index
-                _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, numpy.asarray([data.point.x, data.point.y]), axis = 0)
     else:
-        _trajectory_points[_pick_up_i, :] = numpy.asarray([data.point.x, data.point.y])
-        _picking_up = False
+        # Find distances to all points
+        dists = numpy.sqrt(
+                    numpy.sum(
+                        numpy.power(
+                            _trajectory_points - cpoint,
+                            2
+                        ),
+                        axis = 1
+                    )
+                )
 
-    if not _picking_up:
-        if len(_trajectory_points) == 0:
-            # First element
-            _trajectory_points = numpy.array([[data.point.x,data.point.y]])
+        _dist = numpy.min(dists)
+        _i = numpy.argmin(dists)
+
+        if _picking_up:
+            # Place
+            _trajectory_points[_pick_up_i, :] = cpoint
+            _picking_up = False
         else:
-            _trajectory_points = numpy.vstack((_trajectory_points, numpy.array([data.point.x,data.point.y])))
+            if _dist < 0.15:
+                # Close the loop
+                if not _trajectory_done and _i == 0 and len(_trajectory_points) > 2:
+                    _trajectory_done = True
 
-        if len(_trajectory_points) > 2:
-            first_point = _trajectory_points[0]
-            dist = math.sqrt(math.pow(first_point[0]-data.point.x,2) + math.pow(first_point[1]-data.point.y,2))
-            print(dist)
-            if dist < 0.15 or _trajectory_done:
-                print("trajectory done")
-                _trajectory_done = True
-                _trajectory_points = numpy.vstack((_trajectory_points[0:-1], _trajectory_points[0]))
-                simple_trajectory()
-                _trajectory_points = _trajectory_points[0:-1]
+                # Pick
+                else:
+                    _pick_up_i = _i
+                    _picking_up = True
+            else:
+                if not _trajectory_done:
+                    # Place new point in order, as when building the path, we want to have control over this
+                    _trajectory_points = numpy.vstack((_trajectory_points, cpoint))
 
-        print(str(_trajectory_points.tolist()))
+                else:
+                    # Place new point in between two closest points
+                    consdists = dists + numpy.roll(dists, 1)
+                    closest_point_i = numpy.argmin(consdists)
+
+                    # Now we have index of end of the gap -> we can put this point on this index
+                    _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, cpoint, axis = 0)
+
+    # Reinterpolate the path and recompute everything
+    if _trajectory_done:
+        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+        simple_trajectory()
+        _trajectory_points = _trajectory_points[0:-1]
+
+    print(str(_trajectory_points.tolist()))
 
     #Marker message
     marker = Marker()
