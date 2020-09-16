@@ -492,8 +492,18 @@ def clicked_point(data):
         _i = numpy.argmin(dists)
 
         if _picking_up:
-            # Place
-            _trajectory_points[_pick_up_i, :] = cpoint
+            if _dist < 0.15:
+                # Place it back
+                if _pick_up_i == _i:
+                    pass
+
+                # Delete it
+                else:
+                    _trajectory_points = numpy.delete(_trajectory_points, _pick_up_i, axis = 0)
+            else:
+                # Move the point
+                _trajectory_points[_pick_up_i, :] = cpoint
+
             _picking_up = False
         else:
             if _dist < 0.15:
