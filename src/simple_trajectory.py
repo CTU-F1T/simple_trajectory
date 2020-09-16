@@ -200,7 +200,9 @@ _bounds = None
 _trajectory_points = []
 _trajectory_done = False
 TRAJECTORY_DISTANCE = 5
+INFLATE_TRAJECTORY = numpy.array(numpy.meshgrid(range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1), range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1))).T.reshape(-1, 2)
 INFLATE_DISTANCE = 5
+INFLATE_AREA = numpy.array(numpy.meshgrid(range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1), range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1))).T.reshape(-1, 2)
 _picking_up = False
 _pick_up_i = 0
 
@@ -306,12 +308,11 @@ def simple_trajectory():
             _y = int( ( yi[i] - _info.origin.position.y ) / _info.resolution )
 
             # Inflate
-            for __x in range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1):
-                for __y in range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1):
-                    if __x**2 + __y**2 <= TRAJECTORY_DISTANCE**2:
-                        if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
-                            if _map_inflated[_y + __y, _x + __x] == 0:
-                                n_map[_y + __y, _x + __x] = 1
+            for __x , __y in INFLATE_TRAJECTORY:
+                if __x**2 + __y**2 <= TRAJECTORY_DISTANCE**2:
+                    if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
+                        if _map_inflated[_y + __y, _x + __x] == 0:
+                            n_map[_y + __y, _x + __x] = 1
 
         # Color the map and forget all disjoint regions (disjoint from the path)
         for i in range(0, ln):
@@ -326,15 +327,16 @@ def simple_trajectory():
 
         while colored_cells:
             colored_cells = False
-            for _i in range(_info.width):
-                for _j in range(_info.height):
-                    if n_map[_j, _i] == 1:
-                        if (_j > 0 and n_map[_j - 1, _i] == 2) or \
-                           (_j < _info.height - 1 and n_map[_j + 1, _i] == 2) or \
-                           (_i > 0 and n_map[_j, _i - 1] == 2) or \
-                           (_i < _info.width - 1 and n_map[_j, _i + 1] == 2):
-                            n_map[_j, _i] = 2
-                            colored_cells = True
+
+            map_walls = numpy.where(n_map == 1)
+
+            for _j, _i in zip(map_walls[0], map_walls[1]):
+                if (_j > 0 and n_map[_j - 1, _i] == 2) or \
+                   (_j < _info.height - 1 and n_map[_j + 1, _i] == 2) or \
+                   (_i > 0 and n_map[_j, _i - 1] == 2) or \
+                   (_i < _info.width - 1 and n_map[_j, _i + 1] == 2):
+                    n_map[_j, _i] = 2
+                    colored_cells = True
 
         gc = GridCells()
         gc.header.frame_id = 'map'
@@ -342,14 +344,14 @@ def simple_trajectory():
         gc.cell_height = 0.05
         gc.cells = []
 
-        for _i in range(_info.width):
-            for _j in range(_info.height):
-                if n_map[_j, _i] == 2:
-                    p2 = Point()
-                    p2.x = _info.origin.position.x + _i * _info.resolution
-                    p2.y = _info.origin.position.y + _j * _info.resolution
-                    p2.z = 0
-                    gc.cells.append(p2)
+        map_walls = numpy.where(n_map == 2)
+
+        for _j, _i in zip(map_walls[0], map_walls[1]):
+            p2 = Point()
+            p2.x = _info.origin.position.x + _i * _info.resolution
+            p2.y = _info.origin.position.y + _j * _info.resolution
+            p2.z = 0
+            gc.cells.append(p2)
 
         infgc_pub.publish(gc)
 
@@ -414,15 +416,14 @@ def map_callback(map):
     # Inflate map
     _map_inflated = numpy.zeros((_info.height, _info.width))
 
-    for _x in range(_info.width):
-        for _y in range(_info.height):
-                if _map[_y, _x] == 100:
-                    # Inflate
-                    for __x in range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1):
-                        for __y in range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1):
-                            if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
-                                if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
-                                    _map_inflated[_y + __y, _x + __x] = 100
+    map_walls = numpy.where(_map == 100)
+
+    for _y, _x in zip(map_walls[0], map_walls[1]):
+        # Inflate
+        for __x, __y in INFLATE_AREA:
+            if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
+                if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
+                    _map_inflated[_y + __y, _x + __x] = 100
 
     map.info = _info
     map.data = list(_map_inflated.flatten())
