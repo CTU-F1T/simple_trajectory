@@ -182,6 +182,14 @@ from geometry_msgs.msg import PoseStamped
 #: Header header
 #: Pose pose
 
+# Quaternion
+from geometry_msgs.msg import Quaternion
+# This represents an orientation in free space in quaternion form.
+#: float64 x
+#: float64 y
+#: float64 z
+#: float64 w
+
 
 # Global variables
 _map_loaded = False
@@ -515,6 +523,7 @@ def clicked_point(data):
     marker.header.frame_id = "/map"
     marker.type = marker.SPHERE_LIST
     marker.action = marker.ADD
+    marker.pose.orientation = Quaternion(0, 0, 0, 1)
     marker.scale.x = 0.15
     marker.scale.y = 0.15
     marker.scale.z = 0.15
