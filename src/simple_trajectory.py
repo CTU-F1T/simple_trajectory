@@ -226,7 +226,7 @@ def simple_trajectory():
     https://stackoverflow.com/questions/52014197/how-to-interpolate-a-2d-curve-in-python
     profile_trajectory/profile_trajectory.py:interpolate_points()
     """
-    global _trajectory_points, _map_loaded, _map, _info, _bounds
+    global _trajectory_points, _map_loaded, _map, _info, _bounds, _map_inflated
 
     x, y = _trajectory_points.T
     i = numpy.arange(len(_trajectory_points))
@@ -298,10 +298,11 @@ def simple_trajectory():
             _y = int( ( yi[i] - _info.origin.position.y ) / _info.resolution )
 
             # Inflate
-            for __x in range(-5, 6):
-                for __y in range(-5, 6):
+            for __x in range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1):
+                for __y in range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1):
                     if __x**2 + __y**2 <= TRAJECTORY_DISTANCE**2:
-                        n_map[_y + __y, _x + __x] = 1
+                        if _map_inflated[_y + __y, _x + __x] == 0:
+                            n_map[_y + __y, _x + __x] = 1
 
         gc = GridCells()
         gc.header.frame_id = 'map'
