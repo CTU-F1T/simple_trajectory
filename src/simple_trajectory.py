@@ -37,6 +37,14 @@ from scipy.interpolate import splprep, splev, interp1d, CubicSpline
 # Plot
 import matplotlib.pyplot as plt
 
+# Dynamic reconfigure
+import dynamic_reconfigure.server
+
+
+# Dynamic reconfigure types
+# simple_trajectory
+from simple_trajectory.cfg import dynsimpletrajectoryConfig
+
 
 # Message types
 # ColorRGBA
@@ -215,6 +223,39 @@ pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size = 1, lat
 map_pub = rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
 inf_pub = rospy.Publisher('reference_path/infmarker', Marker, queue_size = 1, latch = True)
 infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 1, latch = True)
+
+
+######################
+# Dynamic reconfigure
+######################
+
+def reconf_callback(config, level):
+    """Callback for maintaining dynamic reconfigure of this node."""
+    global _trajectory_done, _trajectory_points, _map_loaded
+    global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
+    global INFLATE_DISTANCE, INFLATE_AREA
+
+    rospy.loginfo("""Reconfigure Request: \n""" +
+                    """\tMap inflation: {map_inflate}\n""" \
+                    """\tTrajectory inflation: {trajectory_inflate}\n""" \
+                 .format(**config))
+
+    TRAJECTORY_DISTANCE = config["trajectory_inflate"]
+    INFLATE_DISTANCE = config["map_inflate"]
+
+    INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
+    INFLATE_AREA = create_surroundings(INFLATE_DISTANCE)
+
+    if _map_loaded:
+        inflate_map()
+
+    if _trajectory_done:
+        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+        simple_trajectory()
+        _trajectory_points = _trajectory_points[0:-1]
+
+    return config
+
 
 ######################
 # Map related functions
@@ -613,6 +654,9 @@ def start_node():
     # Register callback
     rospy.Subscriber("map", OccupancyGrid, map_callback)
     rospy.Subscriber("clicked_point", PointStamped, clicked_point)
+
+    # Dynamic reconfigure
+    srv = dynamic_reconfigure.server.Server(dynsimpletrajectoryConfig, reconf_callback)
 
     # Function is_shutdown() reacts to exit flag (Ctrl+C, etc.)
     while not rospy.is_shutdown():
