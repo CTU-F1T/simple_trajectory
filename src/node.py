@@ -240,16 +240,22 @@ def reconf_callback(config, level):
                     """\tTrajectory inflation: {trajectory_inflate}\n""" \
                  .format(**config))
 
-    TRAJECTORY_DISTANCE = config["trajectory_inflate"]
-    INFLATE_DISTANCE = config["map_inflate"]
+    map_inflated = False
 
-    INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
-    INFLATE_AREA = create_surroundings(INFLATE_DISTANCE)
+    if _map_loaded and config["map_inflate"] != INFLATE_DISTANCE:
+        INFLATE_DISTANCE = config["map_inflate"]
 
-    if _map_loaded:
+        INFLATE_AREA = create_surroundings(INFLATE_DISTANCE)
+
         inflate_map()
 
-    if _trajectory_done:
+        map_inflated = True
+
+    if _trajectory_done and (config["trajectory_inflate"] != TRAJECTORY_DISTANCE or map_inflated):
+        TRAJECTORY_DISTANCE = config["trajectory_inflate"]
+
+        INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
+
         _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
         simple_trajectory()
         _trajectory_points = _trajectory_points[0:-1]
