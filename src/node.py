@@ -220,7 +220,7 @@ _pick_up_i = 0
 pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size = 1, latch = True)
 path_pub = rospy.Publisher('reference_path/path', Path, queue_size = 1, latch = True)
 pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size = 1, latch = True)
-map_pub = rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
+map_pub = None#rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
 inf_pub = rospy.Publisher('reference_path/infmarker', Marker, queue_size = 1, latch = True)
 infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 1, latch = True)
 
@@ -232,13 +232,22 @@ infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 
 def reconf_callback(config, level):
     """Callback for maintaining dynamic reconfigure of this node."""
     global _trajectory_done, _trajectory_points, _map_loaded
+    global map_pub
     global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
     global INFLATE_DISTANCE, INFLATE_AREA
 
     rospy.loginfo("""Reconfigure Request: \n""" +
                     """\tMap inflation: {map_inflate}\n""" \
                     """\tTrajectory inflation: {trajectory_inflate}\n""" \
+                    """\tPublish cropped map: {publish_cropped_map}\n""" \
                  .format(**config))
+
+    if config["publish_cropped_map"] and map_pub is None:
+        map_pub = rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
+        publish_map()
+    elif not config["publish_cropped_map"] and map_pub is not None:
+        del map_pub
+        map_pub = None
 
     map_inflated = False
 
@@ -282,6 +291,20 @@ def create_surroundings(radius):
            ).T.reshape(-1, 2)
 
 
+def publish_map():
+    """Publish inflated cropped map."""
+    global _map_loaded, _map_inflated, _info, _map_header, map_pub
+
+    if _map_loaded and map_pub is not None:
+        map = OccupancyGrid()
+        map.header = _map_header
+        map.header.stamp = rospy.Time(0)
+        map.info = _info
+        map.data = list(_map_inflated.flatten())
+
+        map_pub.publish(map)
+
+
 def inflate_map():
     """Inflate the map and store it."""
     global _map_loaded, _map, _map_header, _info, _map_inflated
@@ -304,13 +327,7 @@ def inflate_map():
 
     rospy.loginfo("Map inflated.")
 
-    map = OccupancyGrid()
-    map.header = _map_header
-    map.header.stamp = rospy.Time(0)
-    map.info = _info
-    map.data = list(_map_inflated.flatten())
-
-    map_pub.publish(map)
+    publish_map()
 
 
 ######################
@@ -512,10 +529,10 @@ def map_callback(map):
     # Inflate map
     inflate_map()
 
-    map.info = _info
-    map.data = list(_map_inflated.flatten())
-
-    map_pub.publish(map)
+    #map.info = _info
+    #map.data = list(_map_inflated.flatten())
+    #
+    #map_pub.publish(map)
 
     mkr = Marker()
     mkr.header.frame_id = 'map'
