@@ -195,14 +195,15 @@ from geometry_msgs.msg import Quaternion
 _map_loaded = False
 _map = []
 _map = None
+_map_header = None
 _info = None
 _bounds = None
 _trajectory_points = []
 _trajectory_done = False
 TRAJECTORY_DISTANCE = 5
-INFLATE_TRAJECTORY = numpy.array(numpy.meshgrid(range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1), range(-TRAJECTORY_DISTANCE, TRAJECTORY_DISTANCE+1))).T.reshape(-1, 2)
+INFLATE_TRAJECTORY = None #create_surroundings(TRAJECTORY_DISTANCE)
 INFLATE_DISTANCE = 5
-INFLATE_AREA = numpy.array(numpy.meshgrid(range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1), range(-INFLATE_DISTANCE, INFLATE_DISTANCE+1))).T.reshape(-1, 2)
+INFLATE_AREA = None #create_surroundings(INFLATE_DISTANCE)
 _picking_up = False
 _pick_up_i = 0
 
@@ -219,7 +220,46 @@ infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 
 # Map related functions
 ######################
 
+def create_surroundings(radius):
+    """Create array of surrounding cells.
 
+    Arguments:
+    radius -- radius of the surrounding area, number of cells, int
+    """
+
+    return numpy.array(
+            numpy.meshgrid(
+                range(-radius, radius+1),
+                range(-radius, radius+1)
+            )
+           ).T.reshape(-1, 2)
+
+
+def inflate_map():
+    """Inflate the map and store it."""
+    global _map_loaded, _map, _map_header, _info, _map_inflated
+
+    #if not _map_loaded:
+    #    return
+
+    _map_inflated = numpy.zeros((_info.height, _info.width))
+
+    map_walls = numpy.where(_map == 100)
+
+    for _y, _x in zip(map_walls[0], map_walls[1]):
+        # Inflate
+        for __x, __y in INFLATE_AREA:
+            if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
+                if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
+                    _map_inflated[_y + __y, _x + __x] = 100
+
+    map = OccupancyGrid()
+    map.header = _map_header
+    map.header.stamp = rospy.Time(0)
+    map.info = _info
+    map.data = list(_map_inflated.flatten())
+
+    map_pub.publish(map)
 
 
 ######################
@@ -371,13 +411,14 @@ def map_callback(map):
     Note: This is not used at all. Maybe in the future it should check that
     the generated trajectory is within the bounds.
     """
-    global _map_loaded, _map, _info, _bounds, _map_inflated
+    global _map_loaded, _map, _map_header, _info, _bounds, _map_inflated
 
     # Load map
     _map = numpy.array(map.data).reshape((map.info.height, map.info.width))
 
     # Save info
     _info = map.info
+    _map_header = map.header
 
     # Cut the map
     # Find first and last occurence of a non-(-1) value
@@ -414,16 +455,7 @@ def map_callback(map):
     print _bounds
 
     # Inflate map
-    _map_inflated = numpy.zeros((_info.height, _info.width))
-
-    map_walls = numpy.where(_map == 100)
-
-    for _y, _x in zip(map_walls[0], map_walls[1]):
-        # Inflate
-        for __x, __y in INFLATE_AREA:
-            if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
-                if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
-                    _map_inflated[_y + __y, _x + __x] = 100
+    inflate_map()
 
     map.info = _info
     map.data = list(_map_inflated.flatten())
@@ -590,4 +622,6 @@ def start_node():
 
 
 if __name__ == "__main__":
+    INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
+    INFLATE_AREA = create_surroundings(INFLATE_DISTANCE)
     start_node()
