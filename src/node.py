@@ -283,6 +283,8 @@ def inflate_map():
     #if not _map_loaded:
     #    return
 
+    rospy.loginfo("Inflating map...")
+
     _map_inflated = numpy.zeros((_info.height, _info.width))
 
     map_walls = numpy.where(_map == 100)
@@ -293,6 +295,8 @@ def inflate_map():
             if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
                 if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
                     _map_inflated[_y + __y, _x + __x] = 100
+
+    rospy.loginfo("Map inflated.")
 
     map = OccupancyGrid()
     map.header = _map_header
@@ -382,6 +386,8 @@ def simple_trajectory():
     # Available surroundings
     # Store path to map and inflate it
     if _map_loaded:
+        rospy.loginfo("Inflating path...")
+
         n_map = numpy.zeros((_info.height, _info.width))
 
         for i in range(0,ln):
@@ -435,6 +441,8 @@ def simple_trajectory():
             gc.cells.append(p2)
 
         infgc_pub.publish(gc)
+
+        rospy.loginfo("Path inflated.")
 
     return
 
