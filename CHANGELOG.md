@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+## 0.2.1 - 2020-09-18
+### Added
+- Add commentary along with usage manual to the node.
+
 ## 0.2.0 - 2020-09-18
 ### Added
 - Path creation is now interactive -- control points can be added, moved, and deleted from the path.
