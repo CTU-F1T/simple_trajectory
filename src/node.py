@@ -32,10 +32,7 @@ import numpy
 import math
 
 # Math engine / interpolation
-from scipy.interpolate import splprep, splev, interp1d, CubicSpline
-
-# Plot
-import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline#, interp1d
 
 # Dynamic reconfigure
 import dynamic_reconfigure.server
