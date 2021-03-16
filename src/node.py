@@ -661,6 +661,7 @@ def map_callback(map):
 
 
     _map_loaded = True
+    publish_map()
 
 
 def clicked_point(data):
