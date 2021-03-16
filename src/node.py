@@ -767,6 +767,25 @@ def clicked_point(data):
     pnt_pub.publish(marker)
 
 
+def path_callback(data):
+    """Receive a path from different source.
+
+    Arguments:
+    data -- received path, defined by nav_msgs.msg/Path
+    """
+    global _trajectory_done, _trajectory_points
+
+    _trajectory_done = True
+
+    _trajectory_points = numpy.asarray(
+        [ [pose.pose.position.x, pose.pose.position.y] for pose in data.poses ]
+    )
+
+    #_trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+    simple_trajectory()
+    _trajectory_points = _trajectory_points[0:-1]
+
+
 ######################
 # Functions
 ######################
@@ -780,6 +799,7 @@ def start_node():
     # Register callback
     rospy.Subscriber("map", OccupancyGrid, map_callback)
     rospy.Subscriber("clicked_point", PointStamped, clicked_point)
+    rospy.Subscriber("path", Path, path_callback)
 
     # Dynamic reconfigure
     srv = dynamic_reconfigure.server.Server(dynsimpletrajectoryConfig, reconf_callback)
