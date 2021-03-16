@@ -9,13 +9,13 @@
                            map | OccupancyGrid
                                v
                           ------------
-                         |            |  reference_path/{path, marker}
-                         |            | ------------------------------>
- ------   clicked_point  |   simple   |        {Path, Marker}
-| rViz | --------------> |            |
- ------   PointStamped   | trajectory |    reference_path/gridcells
-                         |            | ------------------------------>
-                         |            |           GridCells
+ ------   clicked_point  |            |  reference_path/{path, marker}
+| rViz | --------------> |            | ------------------------------>
+ ------   PointStamped   |   simple   |        {Path, Marker}
+                         |            |
+ ---------     path      | trajectory |    reference_path/gridcells
+| storage | ...........> |            | ------------------------------>
+ ---------     Path      |            |           GridCells
                           ------------
                                |
              trajectory_points | Marker

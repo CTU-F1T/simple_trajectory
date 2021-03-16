@@ -5,6 +5,7 @@ using GUI of rViz.
 
 [<state> /clicked_point|geometry_msgs/PointStamped]->[simple_trajectory]
 [<state> /map|nav_msgs/OccupancyGrid]->[simple_trajectory]
+[<state> /path|nav_msgs/Path]-->[simple_trajectory]
 [simple_trajectory]->[<state> /trajectory_points|visualization_msgs/Marker]
 [/trajectory_points]-:>[rViz]
 [simple_trajectory]->[<state> /reference_path/path|nav_msgs/Path]
