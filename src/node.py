@@ -738,7 +738,7 @@ def clicked_point(data):
 
     #Marker message
     marker = Marker()
-    marker.header.frame_id = "/map"
+    marker.header.frame_id = "map"
     marker.type = marker.SPHERE_LIST
     marker.action = marker.ADD
     marker.pose.orientation = Quaternion(0, 0, 0, 1)
