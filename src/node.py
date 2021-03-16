@@ -66,6 +66,9 @@ from scipy.interpolate import CubicSpline#, interp1d
 # Dynamic reconfigure
 import dynamic_reconfigure.server
 
+# Progress printing
+import sys
+
 
 # Dynamic reconfigure types
 # simple_trajectory
@@ -346,7 +349,17 @@ def inflate_map():
     for _y, _x in zip(map_walls[0], map_walls[1]):
         _map_inflated[_y, _x] = 100
 
+    i = len(map_walls[0])
+    print "%08d\r" % i,
+    sys.stdout.flush()
+
     for _y, _x in zip(map_walls[0], map_walls[1]):
+
+        if i % 1000 == 0:
+            print "%08d\r" % i,
+            sys.stdout.flush()
+
+        i-=1
         # Inflate
         for __x, __y in INFLATE_AREA:
             if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
@@ -441,9 +454,16 @@ def simple_trajectory():
 
         n_map = numpy.zeros((_info.height, _info.width))
 
+        ni = ln
+        print "%08d\r" % ni,
+        sys.stdout.flush()
+
         for i in range(0,ln):
             _x = int( ( xi[i] - _info.origin.position.x ) / _info.resolution )
             _y = int( ( yi[i] - _info.origin.position.y ) / _info.resolution )
+
+            print "%08d\r" % (ni - i),
+            sys.stdout.flush()
 
             # Inflate
             for __x , __y in INFLATE_TRAJECTORY:
