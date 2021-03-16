@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+## 0.3.0 - 2021-03-16
+### Added
+- Show inflation progress in the terminal.
+- Use map rotation when generating the cells.
+- Add callback for external source of simple trajectory points via `Path`.
+
+### Changed
+- Set default values inflation parameters to 0.
+- Increase maximum values of inflation parameters from 40 to 100.
+
+### Fixed
+- Cell size is same as size of a map cell.
+- Marker for 'clicked_point' is using proper `frame_id`.
+- Publish inflated map in the callback as well.
+
 ## 0.2.1 - 2020-09-18
 ### Added
 - Add commentary along with usage manual to the node.
