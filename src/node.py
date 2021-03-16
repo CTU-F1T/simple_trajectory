@@ -498,8 +498,8 @@ def simple_trajectory():
 
         gc = GridCells()
         gc.header.frame_id = 'map'
-        gc.cell_width = 0.05
-        gc.cell_height = 0.05
+        gc.cell_width = _info.resolution
+        gc.cell_height = _info.resolution
         gc.cells = []
 
         map_walls = numpy.where(n_map == 2)
