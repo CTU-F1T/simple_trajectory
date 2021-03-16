@@ -66,6 +66,9 @@ from scipy.interpolate import CubicSpline#, interp1d
 # Dynamic reconfigure
 import dynamic_reconfigure.server
 
+# Quaternion conversion
+#from tf.transformations import euler_from_quaternion
+
 # Progress printing
 import sys
 
@@ -504,11 +507,35 @@ def simple_trajectory():
 
         map_walls = numpy.where(n_map == 2)
 
+        # Rotation
+        # http://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+        q = numpy.asarray([
+                _info.origin.orientation.w,
+                _info.origin.orientation.x,
+                _info.origin.orientation.y,
+                _info.origin.orientation.z
+            ])
+        qi = numpy.asarray([
+                _info.origin.orientation.w,
+                -_info.origin.orientation.x,
+                -_info.origin.orientation.y,
+                -_info.origin.orientation.z
+            ])
+
         for _j, _i in zip(map_walls[0], map_walls[1]):
+            p = numpy.asarray([
+                    0,
+                    _info.origin.position.x + _i * _info.resolution,
+                    _info.origin.position.y + _j * _info.resolution,
+                    0
+                ])
+
+            pr = multiply_quaternions(multiply_quaternions(qi, p), q)
+
             p2 = Point()
-            p2.x = _info.origin.position.x + _i * _info.resolution
-            p2.y = _info.origin.position.y + _j * _info.resolution
-            p2.z = 0
+            p2.x = pr[1]
+            p2.y = pr[2]
+            p2.z = pr[3]
             gc.cells.append(p2)
 
         infgc_pub.publish(gc)
@@ -516,6 +543,25 @@ def simple_trajectory():
         rospy.loginfo("Path inflated.")
 
     return
+
+
+def multiply_quaternions(r, s):
+    """Multiply two wxyz-quaternions.
+
+    Arguments:
+    r -- first quaternion for multiplication, 4-numpy.ndarray
+    s -- second quaternion for multiplication, 4-numpy.ndarray
+
+    Returns:
+    t -- result of the product of quaternions, 4-numpy.ndarray
+    """
+    return numpy.asarray([
+            r[0] * s[0] - r[1] * s[1] - r[2] * s[2] - r[3] * s[3],
+            r[0] * s[1] + r[1] * s[0] - r[2] * s[3] + r[3] * s[2],
+            r[0] * s[2] + r[1] * s[3] + r[2] * s[0] - r[3] * s[1],
+            r[0] * s[3] - r[1] * s[2] + r[2] * s[1] + r[3] * s[0]
+        ])
+
 
 
 ######################
