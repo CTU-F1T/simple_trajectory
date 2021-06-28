@@ -246,6 +246,7 @@ INFLATE_DISTANCE = 0
 INFLATE_AREA = None #create_surroundings(INFLATE_DISTANCE)
 _picking_up = False
 _pick_up_i = 0
+RELOAD_MAP = False
 
 
 # Publishers
@@ -267,11 +268,13 @@ def reconf_callback(config, level):
     global map_pub
     global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
     global INFLATE_DISTANCE, INFLATE_AREA
+    global RELOAD_MAP
 
     rospy.loginfo("""Reconfigure Request: \n""" +
                     """\tMap inflation: {map_inflate}\n""" \
                     """\tTrajectory inflation: {trajectory_inflate}\n""" \
                     """\tPublish cropped map: {publish_cropped_map}\n""" \
+                    """\tReload map: {reload_map}\n""" \
                  .format(**config))
 
     if config["publish_cropped_map"] and map_pub is None:
@@ -300,6 +303,8 @@ def reconf_callback(config, level):
         _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
         simple_trajectory()
         _trajectory_points = _trajectory_points[0:-1]
+
+    RELOAD_MAP = config["reload_map"]
 
     return config
 
@@ -578,6 +583,10 @@ def map_callback(map):
     the generated trajectory is within the bounds.
     """
     global _map_loaded, _map, _map_header, _info, _bounds, _map_inflated
+    global RELOAD_MAP
+
+    if _map_loaded and not RELOAD_MAP:
+        return
 
     # Load map
     _map = numpy.array(map.data).reshape((map.info.height, map.info.width))
