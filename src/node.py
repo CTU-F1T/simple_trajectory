@@ -354,6 +354,7 @@ def inflate_map():
     _map_inflated = numpy.zeros((_info.height, _info.width))
 
     map_walls = numpy.where(_map == 100)
+    # map_walls = numpy.where(_map > 0)
     for _y, _x in zip(map_walls[0], map_walls[1]):
         _map_inflated[_y, _x] = 100
 
