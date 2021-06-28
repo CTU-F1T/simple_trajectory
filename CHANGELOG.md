@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+## 0.3.1 - 2021-06-28
+### Added
+- Parameter `reload_map` to block / allow usage of newer maps.
+
 ## 0.3.0 - 2021-03-16
 ### Added
 - Show inflation progress in the terminal.
