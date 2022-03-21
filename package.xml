@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>simple_trajectory</name>
-  <version>0.3.9</version>
+  <version>0.4.0</version>
   <description>
     This node is used to create a custom path using 'Publish Point' feature
     that is available in rViz.
@@ -12,7 +12,7 @@
 
   <maintainer email="f1tenth@rtime.felk.cvut.cz">F1tenth CTU Community</maintainer>
 
-  <license>TODO</license>
+  <license>GPLv3</license>
 
   <author email="kopecdav@fel.cvut.cz">David Kopecký</author>
   <author email="klapajar@fel.cvut.cz">Jaroslav Klapálek</author>
