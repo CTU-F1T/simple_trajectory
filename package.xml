@@ -1,26 +1,39 @@
 <?xml version="1.0"?>
-<package>
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>simple_trajectory</name>
   <version>0.3.1</version>
-  <description>The simple_trajectory package</description>
+  <description>
+    This node is used to create a custom path using 'Publish Point' feature
+    that is available in rViz.
+  </description>
 
-  <maintainer email="klapajar@fel.cvut.cz">Jaroslav Klapálek</maintainer>
+  <maintainer email="f1tenth@rtime.felk.cvut.cz">F1tenth CTU Community</maintainer>
 
   <license>TODO</license>
 
   <author email="kopecdav@fel.cvut.cz">David Kopecký</author>
+  <author email="klapajar@fel.cvut.cz">Jaroslav Klapálek</author>
+
+  <url type="repository">https://github.com/CTU-F1T/simple_trajectory</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
   <!-- build_depend libraries -->
   <build_depend>dynamic_reconfigure</build_depend>
 
-  <!-- run_depend libraries -->
-  <run_depend>rospy</run_depend>
+  <!-- exec_depend libraries -->
+  <exec_depend>rospy</exec_depend>
 
-  <!-- run_depend message types -->
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>visualization_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
+  <!-- exec_depend message types -->
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+
+  <export>
+    <index url="git@github.com:CTU-F1T/simple_trajectory.git" />
+  </export>
 </package>
