@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+## 0.3.9 - 2022-03-21
+### Added
+- Readme file.
+- Link to the new repository.
+- Python dependencies.
+
+### Changed
+- Updated package manifest format to version 3.
+- Maintainer is not set to the community email.
+
+### Deprecated
+- Starting from v0.4.0 this package will be available only on GitHub. This is the last version here.
+
 ## 0.3.1 - 2021-06-28
 ### Added
 - Parameter `reload_map` to block / allow usage of newer maps.
