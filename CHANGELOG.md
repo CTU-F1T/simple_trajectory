@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+### Changed
+- Do not recompute the path when picking up a point.
+
 ## 0.4.0 - 2022-03-21
 ### Added
 - License file.

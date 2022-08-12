@@ -740,7 +740,8 @@ def clicked_point(data):
                     _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, cpoint, axis = 0)
 
     # Reinterpolate the path and recompute everything
-    if _trajectory_done:
+    # Only when not picking up points
+    if _trajectory_done and not _picking_up:
         _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
         simple_trajectory()
         _trajectory_points = _trajectory_points[0:-1]
