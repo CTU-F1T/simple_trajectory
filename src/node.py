@@ -247,6 +247,7 @@ INFLATE_AREA = None #create_surroundings(INFLATE_DISTANCE)
 _picking_up = False
 _pick_up_i = 0
 RELOAD_MAP = False
+_closed_path = False
 
 
 # Publishers
@@ -394,7 +395,7 @@ def simple_trajectory():
     https://stackoverflow.com/questions/52014197/how-to-interpolate-a-2d-curve-in-python
     profile_trajectory/profile_trajectory.py:interpolate_points()
     """
-    global _trajectory_points, _map_loaded, _map, _info, _bounds, _map_inflated
+    global _trajectory_points, _map_loaded, _map, _info, _bounds, _map_inflated, _closed_path
 
     x, y = _trajectory_points.T
     i = numpy.arange(len(_trajectory_points))
@@ -411,7 +412,7 @@ def simple_trajectory():
     # TODO: Make this as a parameter.
     alpha = numpy.linspace(0, 1, 440)
 
-    ipol = CubicSpline(distance, _trajectory_points, axis=0, bc_type="periodic")(alpha)
+    ipol = CubicSpline(distance, _trajectory_points, axis=0, bc_type=("periodic" if _closed_path else "not-a-knot"))(alpha)
 
     xi = ipol[:, 0]
     yi = ipol[:, 1]
@@ -680,7 +681,7 @@ def clicked_point(data):
     Arguments:
     data -- received point, defined by geometry_msgs.msg/PointStamped
     """
-    global _trajectory_done, _trajectory_points, _picking_up, _pick_up_i
+    global _trajectory_done, _trajectory_points, _picking_up, _pick_up_i, _closed_path
 
     cpoint = numpy.asarray([data.point.x, data.point.y])
 
@@ -704,9 +705,15 @@ def clicked_point(data):
 
         if _picking_up:
             if _dist < 0.15:
-                # Place it back
                 if _pick_up_i == _i:
-                    pass
+                    # Complete the trajectory if this is the last point
+                    if not _trajectory_done and _i == len(_trajectory_points) - 1 and len(_trajectory_points) > 1:
+                        _trajectory_done = True
+                        _closed_path = False
+
+                    # Place it back
+                    else:
+                        pass
 
                 # Delete it
                 else:
@@ -721,6 +728,7 @@ def clicked_point(data):
                 # Close the loop
                 if not _trajectory_done and _i == 0 and len(_trajectory_points) > 2:
                     _trajectory_done = True
+                    _closed_path = True
 
                 # Pick
                 else:
@@ -742,9 +750,12 @@ def clicked_point(data):
     # Reinterpolate the path and recompute everything
     # Only when not picking up points
     if _trajectory_done and not _picking_up:
-        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
-        simple_trajectory()
-        _trajectory_points = _trajectory_points[0:-1]
+        if _closed_path:
+            _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+            simple_trajectory()
+            _trajectory_points = _trajectory_points[0:-1]
+        else:
+            simple_trajectory()
 
     print(str(_trajectory_points.tolist()))
 
