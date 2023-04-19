@@ -804,9 +804,12 @@ def path_callback(data):
         [ [pose.pose.position.x, pose.pose.position.y] for pose in data.poses ]
     )
 
-    #_trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
-    simple_trajectory()
-    _trajectory_points = _trajectory_points[0:-1]
+    if _closed_path:
+        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+        simple_trajectory()
+        _trajectory_points = _trajectory_points[0:-1]
+    else:
+        simple_trajectory()
 
 
 ######################
@@ -815,9 +818,14 @@ def path_callback(data):
 
 def start_node():
     """Starts a ROS node, registers the callbacks."""
+    global _closed_path
 
     # Let only one node run
     rospy.init_node('simple_trajectory', anonymous=False)
+
+    # Obtain parameters
+    if rospy.has_param("~closed_path"):
+        _closed_path = bool(rospy.get_param("~closed_path"))
 
     # Register callback
     rospy.Subscriber("map", OccupancyGrid, map_callback)
