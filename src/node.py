@@ -301,9 +301,7 @@ def reconf_callback(config, level):
 
         INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
 
-        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
         simple_trajectory()
-        _trajectory_points = _trajectory_points[0:-1]
 
     RELOAD_MAP = config["reload_map"]
 
@@ -386,6 +384,21 @@ def inflate_map():
 ######################
 
 def simple_trajectory():
+    """Interpolate received points by a cubic curve.
+
+    Wrapper that handles closed/unclosed paths.
+    """
+    global _closed_path, _trajectory_points
+
+    if _closed_path:
+        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+        _simple_trajectory()
+        _trajectory_points = _trajectory_points[0:-1]
+    else:
+        _simple_trajectory()
+
+
+def _simple_trajectory():
     """Interpolate received points by a cubic curve.
 
     Note: Calling this will block the callback.
@@ -750,12 +763,7 @@ def clicked_point(data):
     # Reinterpolate the path and recompute everything
     # Only when not picking up points
     if _trajectory_done and not _picking_up:
-        if _closed_path:
-            _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
-            simple_trajectory()
-            _trajectory_points = _trajectory_points[0:-1]
-        else:
-            simple_trajectory()
+        simple_trajectory()
 
     print(str(_trajectory_points.tolist()))
 
@@ -804,12 +812,7 @@ def path_callback(data):
         [ [pose.pose.position.x, pose.pose.position.y] for pose in data.poses ]
     )
 
-    if _closed_path:
-        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
-        simple_trajectory()
-        _trajectory_points = _trajectory_points[0:-1]
-    else:
-        simple_trajectory()
+    simple_trajectory()
 
 
 ######################
