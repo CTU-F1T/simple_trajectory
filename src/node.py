@@ -815,21 +815,27 @@ def path_callback(data):
     simple_trajectory()
 
 
-def load_data(filename):
+def load_data(filename, delimiter = ""):
     """Loads points from a file.
 
     Arguments:
     filename -- path to a file to load, str
+    delimiter -- delimiter of the data, str, defaults to ""
 
     Note:
-    The data are loaded using numpy.load().
+    When `delimiter` not passed, the data are loaded using
+    numpy.load(). Otherwise numpy.loadtxt() is used.
     """
     global _trajectory_done, _trajectory_points, _closed_path
 
     try:
-        # We load only first two columns. Therefore, this can be used for trajectories, etc.
-        _trajectory_points = numpy.load(filename)[:, :2]
-        rospy.loginfo("Loaded %d points from %s using 'numpy.load()'." % (len(_trajectory_points), filename))
+        if delimiter == "":
+            # We load only first two columns. Therefore, this can be used for trajectories, etc.
+            _trajectory_points = numpy.load(filename)[:, :2]
+            rospy.loginfo("Loaded %d points from %s using 'numpy.load()'." % (len(_trajectory_points), filename))
+        else:
+            _trajectory_points = numpy.loadtxt(filename, delimiter = delimiter)[:, :2]
+            rospy.loginfo("Loaded %d points (delimited by '%s') from %s using 'numpy.loadtxt()'." % (len(_trajectory_points), delimiter, filename))
 
         _trajectory_done = True
     except:
@@ -854,7 +860,7 @@ def start_node():
         _closed_path = bool(rospy.get_param("~closed_path"))
 
     if rospy.has_param("~input_file"):
-        load_data(str(rospy.get_param("~input_file")))
+        load_data(str(rospy.get_param("~input_file")), str(rospy.get_param("~delimiter", "")))
 
     # Register callback
     rospy.Subscriber("map", OccupancyGrid, map_callback)
