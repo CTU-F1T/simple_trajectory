@@ -815,6 +815,29 @@ def path_callback(data):
     simple_trajectory()
 
 
+def load_data(filename):
+    """Loads points from a file.
+
+    Arguments:
+    filename -- path to a file to load, str
+
+    Note:
+    The data are loaded using numpy.load().
+    """
+    global _trajectory_done, _trajectory_points, _closed_path
+
+    try:
+        # We load only first two columns. Therefore, this can be used for trajectories, etc.
+        _trajectory_points = numpy.load(filename)[:, :2]
+        rospy.loginfo("Loaded %d points from %s using 'numpy.load()'." % (len(_trajectory_points), filename))
+
+        _trajectory_done = True
+    except:
+        raise
+
+    simple_trajectory()
+
+
 ######################
 # Functions
 ######################
@@ -829,6 +852,9 @@ def start_node():
     # Obtain parameters
     if rospy.has_param("~closed_path"):
         _closed_path = bool(rospy.get_param("~closed_path"))
+
+    if rospy.has_param("~input_file"):
+        load_data(str(rospy.get_param("~input_file")))
 
     # Register callback
     rospy.Subscriber("map", OccupancyGrid, map_callback)
