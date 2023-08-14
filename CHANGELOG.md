@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+## 0.5.0 - 2023-08-14
 ### Added
 - Support for unclosed paths.
 - Private parameter `closed_path` to set path type when receiving it from `path` topic.
