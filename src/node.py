@@ -247,6 +247,7 @@ INFLATE_AREA = None #create_surroundings(INFLATE_DISTANCE)
 _picking_up = False
 _pick_up_i = 0
 RELOAD_MAP = False
+_closed_path = False
 
 
 # Publishers
@@ -300,9 +301,7 @@ def reconf_callback(config, level):
 
         INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
 
-        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
         simple_trajectory()
-        _trajectory_points = _trajectory_points[0:-1]
 
     RELOAD_MAP = config["reload_map"]
 
@@ -387,6 +386,21 @@ def inflate_map():
 def simple_trajectory():
     """Interpolate received points by a cubic curve.
 
+    Wrapper that handles closed/unclosed paths.
+    """
+    global _closed_path, _trajectory_points
+
+    if _closed_path:
+        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+        _simple_trajectory()
+        _trajectory_points = _trajectory_points[0:-1]
+    else:
+        _simple_trajectory()
+
+
+def _simple_trajectory():
+    """Interpolate received points by a cubic curve.
+
     Note: Calling this will block the callback.
 
     Source:
@@ -394,7 +408,7 @@ def simple_trajectory():
     https://stackoverflow.com/questions/52014197/how-to-interpolate-a-2d-curve-in-python
     profile_trajectory/profile_trajectory.py:interpolate_points()
     """
-    global _trajectory_points, _map_loaded, _map, _info, _bounds, _map_inflated
+    global _trajectory_points, _map_loaded, _map, _info, _bounds, _map_inflated, _closed_path
 
     x, y = _trajectory_points.T
     i = numpy.arange(len(_trajectory_points))
@@ -411,7 +425,7 @@ def simple_trajectory():
     # TODO: Make this as a parameter.
     alpha = numpy.linspace(0, 1, 440)
 
-    ipol = CubicSpline(distance, _trajectory_points, axis=0, bc_type="periodic")(alpha)
+    ipol = CubicSpline(distance, _trajectory_points, axis=0, bc_type=("periodic" if _closed_path else "not-a-knot"))(alpha)
 
     xi = ipol[:, 0]
     yi = ipol[:, 1]
@@ -680,7 +694,7 @@ def clicked_point(data):
     Arguments:
     data -- received point, defined by geometry_msgs.msg/PointStamped
     """
-    global _trajectory_done, _trajectory_points, _picking_up, _pick_up_i
+    global _trajectory_done, _trajectory_points, _picking_up, _pick_up_i, _closed_path
 
     cpoint = numpy.asarray([data.point.x, data.point.y])
 
@@ -704,9 +718,15 @@ def clicked_point(data):
 
         if _picking_up:
             if _dist < 0.15:
-                # Place it back
                 if _pick_up_i == _i:
-                    pass
+                    # Complete the trajectory if this is the last point
+                    if not _trajectory_done and _i == len(_trajectory_points) - 1 and len(_trajectory_points) > 1:
+                        _trajectory_done = True
+                        _closed_path = False
+
+                    # Place it back
+                    else:
+                        pass
 
                 # Delete it
                 else:
@@ -721,6 +741,7 @@ def clicked_point(data):
                 # Close the loop
                 if not _trajectory_done and _i == 0 and len(_trajectory_points) > 2:
                     _trajectory_done = True
+                    _closed_path = True
 
                 # Pick
                 else:
@@ -740,10 +761,9 @@ def clicked_point(data):
                     _trajectory_points = numpy.insert(_trajectory_points, closest_point_i, cpoint, axis = 0)
 
     # Reinterpolate the path and recompute everything
-    if _trajectory_done:
-        _trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
+    # Only when not picking up points
+    if _trajectory_done and not _picking_up:
         simple_trajectory()
-        _trajectory_points = _trajectory_points[0:-1]
 
     print(str(_trajectory_points.tolist()))
 
@@ -792,9 +812,36 @@ def path_callback(data):
         [ [pose.pose.position.x, pose.pose.position.y] for pose in data.poses ]
     )
 
-    #_trajectory_points = numpy.vstack((_trajectory_points, _trajectory_points[0]))
     simple_trajectory()
-    _trajectory_points = _trajectory_points[0:-1]
+
+
+def load_data(filename, delimiter = ""):
+    """Loads points from a file.
+
+    Arguments:
+    filename -- path to a file to load, str
+    delimiter -- delimiter of the data, str, defaults to ""
+
+    Note:
+    When `delimiter` not passed, the data are loaded using
+    numpy.load(). Otherwise numpy.loadtxt() is used.
+    """
+    global _trajectory_done, _trajectory_points, _closed_path
+
+    try:
+        if delimiter == "":
+            # We load only first two columns. Therefore, this can be used for trajectories, etc.
+            _trajectory_points = numpy.load(filename)[:, :2]
+            rospy.loginfo("Loaded %d points from %s using 'numpy.load()'." % (len(_trajectory_points), filename))
+        else:
+            _trajectory_points = numpy.loadtxt(filename, delimiter = delimiter)[:, :2]
+            rospy.loginfo("Loaded %d points (delimited by '%s') from %s using 'numpy.loadtxt()'." % (len(_trajectory_points), delimiter, filename))
+
+        _trajectory_done = True
+    except:
+        raise
+
+    simple_trajectory()
 
 
 ######################
@@ -803,9 +850,17 @@ def path_callback(data):
 
 def start_node():
     """Starts a ROS node, registers the callbacks."""
+    global _closed_path
 
     # Let only one node run
     rospy.init_node('simple_trajectory', anonymous=False)
+
+    # Obtain parameters
+    if rospy.has_param("~closed_path"):
+        _closed_path = bool(rospy.get_param("~closed_path"))
+
+    if rospy.has_param("~input_file"):
+        load_data(str(rospy.get_param("~input_file")), str(rospy.get_param("~delimiter", "")))
 
     # Register callback
     rospy.Subscriber("map", OccupancyGrid, map_callback)

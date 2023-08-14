@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+### Added
+- Support for unclosed paths.
+- Private parameter `closed_path` to set path type when receiving it from `path` topic.
+- Private parameter `input_file` to load initial points from a `.npy` file.
+- Private parameter `delimiter` to load initial points from a `.csv` instead.
+
+### Changed
+- Do not recompute the path when picking up a point.
+
 ## 0.4.0 - 2022-03-21
 ### Added
 - License file.
