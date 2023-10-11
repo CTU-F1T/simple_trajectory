@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+## 0.5.1 - 2023-10-11
+### Added
+- Control points of the trajectory are published when loading data from a file.
+
 ## 0.5.0 - 2023-08-14
 ### Added
 - Support for unclosed paths.

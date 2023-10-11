@@ -843,6 +843,31 @@ def load_data(filename, delimiter = ""):
 
     simple_trajectory()
 
+    # Marker message
+    marker = Marker()
+    marker.header.frame_id = "map"
+    marker.type = marker.SPHERE_LIST
+    marker.action = marker.ADD
+    marker.pose.orientation = Quaternion(0, 0, 0, 1)
+    marker.scale.x = 0.15
+    marker.scale.y = 0.15
+    marker.scale.z = 0.15
+
+    points = []
+    colors = []
+
+    for i, p in enumerate(_trajectory_points):
+        pnt = Point()
+        pnt.x = p[0]
+        pnt.y = p[1]
+        pnt.z = 0
+        points.append(pnt)
+        colors.append(ColorRGBA(1, 0, 0, 1))
+
+    marker.colors = colors
+    marker.points = points
+    pnt_pub.publish(marker)
+
 
 ######################
 # Functions
