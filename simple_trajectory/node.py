@@ -498,7 +498,6 @@ def _simple_trajectory():
     poses = []
     ln = xi.shape
     ln = ln[0]
-    print(ln)
 
     pthm = Marker()
     pthm.header.frame_id = 'map'
