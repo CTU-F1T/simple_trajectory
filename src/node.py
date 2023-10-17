@@ -55,7 +55,7 @@ placed in-between of them.
 
 # ROS wrapper
 from autopsy.node import Node
-from autopsy.core import Core
+from autopsy.core import Core, ROS_VERSION
 
 # Math engine
 import numpy
@@ -953,11 +953,13 @@ def start_node(args = None):
     _node_handle = Node("simple_trajectory")
 
     # Obtain parameters
-    if _node_handle.has_param("~closed_path"):
-        _closed_path = bool(_node_handle.get_param("~closed_path"))
+    # They are not yet implemented, so we need to do this ourselves.
+    if ROS_VERSION == 1:
+        if _node_handle.has_param("~closed_path"):
+            _closed_path = bool(_node_handle.get_param("~closed_path"))
 
-    if _node_handle.has_param("~input_file"):
-        load_data(str(_node_handle.get_param("~input_file")), str(_node_handle.get_param("~delimiter", "")))
+        if _node_handle.has_param("~input_file"):
+            load_data(str(_node_handle.get_param("~input_file")), str(_node_handle.get_param("~delimiter", "")))
 
     # Register callback
     _node_handle.Subscriber("map", OccupancyGrid, map_callback)
@@ -974,7 +976,19 @@ def start_node(args = None):
 
 
     # Dynamic reconfigure
+    # In ROS2 we have to call this before 'get_parameter'.
+    # As it sets values on the ROS Parameter Server, it
+    # has to be called after 'get_param' in ROS1.
     P.reconfigure(node = _node_handle)
+
+    if ROS_VERSION == 2:
+        _closed_path = _node_handle.get_parameter("closed_path").value
+
+        load_data(
+            _node_handle.get_parameter("input_file").value,
+            _node_handle.get_parameter("delimiter").value
+        )
+
 
     Core.spin(_node_handle)
 
