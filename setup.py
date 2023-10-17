@@ -30,7 +30,7 @@ setup(
  tests_require=['pytest'],
  entry_points={
      'console_scripts': [
-             'run = simple_trajectory.node:main'
+             'run = simple_trajectory.node:start_node'
      ],
    },
 )
