@@ -516,13 +516,13 @@ def _simple_trajectory():
         ps.header.frame_id = 'map'
         ps.pose.position.x = xi[i]
         ps.pose.position.y = yi[i]
-        ps.pose.position.z = 0
+        ps.pose.position.z = 0.0
         poses.append(ps)
 
         p = Point()
         p.x = xi[i]
         p.y = yi[i]
-        p.z = 0
+        p.z = 0.0
         pthm.points.append(p)
 
     pth = Path()
@@ -741,7 +741,7 @@ def map_callback(map):
                     p = Point()
                     p.x = _info.origin.position.x + _x * map.info.resolution
                     p.y = _info.origin.position.y + _y * map.info.resolution
-                    p.z = 0
+                    p.z = 0.0
                     mkr.points.append(p)
                     #gc.cells.append(p)
 
@@ -837,7 +837,9 @@ def clicked_point(data):
     marker.header.frame_id = "map"
     marker.type = marker.SPHERE_LIST
     marker.action = marker.ADD
-    marker.pose.orientation = Quaternion(0, 0, 0, 1)
+    marker.pose.orientation = Quaternion(
+        x = 0.0, y = 0.0, z = 0.0, w = 1.0
+    )
     marker.scale.x = 0.15
     marker.scale.y = 0.15
     marker.scale.z = 0.15
@@ -849,14 +851,20 @@ def clicked_point(data):
         pnt = Point()
         pnt.x = p[0]
         pnt.y = p[1]
-        pnt.z = 0
+        pnt.z = 0.0
         points.append(pnt)
         if _picking_up and i == _pick_up_i:
-            colors.append(ColorRGBA(1,1,0,1))
+            colors.append(
+                ColorRGBA(r = 1.0, g = 1.0, b = 0.0, a = 1.0)
+            )
         elif not _trajectory_done and i == 0:
-            colors.append(ColorRGBA(1,0,1,1))
+            colors.append(
+                ColorRGBA(r = 1.0, g = 0.0, b = 1.0, a = 1.0)
+            )
         else:
-            colors.append(ColorRGBA(1,0,0,1))
+            colors.append(
+                ColorRGBA(r = 1.0, g = 0.0, b = 0.0, a = 1.0)
+            )
 
     marker.colors = colors
     marker.points = points
@@ -916,7 +924,9 @@ def load_data(filename, delimiter = ""):
     marker.header.frame_id = "map"
     marker.type = marker.SPHERE_LIST
     marker.action = marker.ADD
-    marker.pose.orientation = Quaternion(0, 0, 0, 1)
+    marker.pose.orientation = Quaternion(
+        x = 0.0, y = 0.0, z = 0.0, w = 1.0
+    )
     marker.scale.x = 0.15
     marker.scale.y = 0.15
     marker.scale.z = 0.15
@@ -928,9 +938,11 @@ def load_data(filename, delimiter = ""):
         pnt = Point()
         pnt.x = p[0]
         pnt.y = p[1]
-        pnt.z = 0
+        pnt.z = 0.0
         points.append(pnt)
-        colors.append(ColorRGBA(1, 0, 0, 1))
+        colors.append(
+            ColorRGBA(r = 1.0, g = 0.0, b = 0.0, a = 1.0)
+        )
 
     marker.colors = colors
     marker.points = points
