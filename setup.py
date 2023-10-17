@@ -21,6 +21,7 @@ setup(
     'setuptools',
     'numpy',
     'scipy',
+    'tqdm',
  ],
  zip_safe=True,
  maintainer='F1tenth CTU Community',

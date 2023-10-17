@@ -7,13 +7,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 - `autopsy>0.9.4` to the dependencies.
 - ROS2 support.
+- `tqdm` to the dependencies.
 
 ### Changed
 - Node is now executable using Python 3 as well.
+- Progress of inflation is now shown using tqdm progress bars.
 
 ### Removed
 - `dynamic_reconfigure` dependency.
 - `cfg/dynsimpletrajectory.cfg` file.
+- Length of the path is no longer printed out.
 
 ## 0.5.1 - 2023-10-11
 ### Added

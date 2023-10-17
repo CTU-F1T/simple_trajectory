@@ -31,6 +31,7 @@
   <exec_depend version_lte="1.2.2" condition="$ROS_VERSION == 1">python-scipy</exec_depend>
   <exec_depend condition="$ROS_VERSION == 2">python-numpy</exec_depend>
   <exec_depend condition="$ROS_VERSION == 2">python-scipy</exec_depend>
+  <exec_depend>python-tqdm</exec_depend>
 
   <exec_depend version_gt="0.9.4">autopsy</exec_depend>
 
