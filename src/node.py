@@ -53,8 +53,8 @@ placed in-between of them.
 # Imports & Globals
 ######################
 
-# ROS python package
-import rospy
+# ROS wrapper
+from autopsy.node import Node
 
 # Math engine
 import numpy
@@ -244,6 +244,7 @@ _picking_up = False
 _pick_up_i = 0
 RELOAD_MAP = False
 _closed_path = False
+_node_handle = None # Node handle, a way how to not rewrite everything
 
 
 # Parameters
@@ -293,15 +294,6 @@ P.update([
 ])
 
 
-# Publishers
-pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size = 1, latch = True)
-path_pub = rospy.Publisher('reference_path/path', Path, queue_size = 1, latch = True)
-pathm_pub = rospy.Publisher('reference_path/marker', Marker, queue_size = 1, latch = True)
-map_pub = None#rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
-#inf_pub = rospy.Publisher('reference_path/infmarker', Marker, queue_size = 1, latch = True)
-infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 1, latch = True)
-
-
 ######################
 # Dynamic reconfigure
 ######################
@@ -312,7 +304,7 @@ def reconf_map_inflate(value):
     global INFLATE_DISTANCE, INFLATE_AREA
     global TRAJECTORY_DISTANCE
 
-    rospy.loginfo("Reconfigure request: map_inflate = %d" % value)
+    _node_handle.loginfo("Reconfigure request: map_inflate = %d" % value)
 
     if _map_loaded and value != INFLATE_DISTANCE:
 
@@ -334,7 +326,7 @@ def reconf_trajectory_inflate(value):
     global _trajectory_done, _inflated_map
     global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
 
-    rospy.loginfo("Reconfigure request: trajectory_inflate = %d" % value)
+    _node_handle.loginfo("Reconfigure request: trajectory_inflate = %d" % value)
 
     if _trajectory_done and (value != TRAJECTORY_DISTANCE or _inflated_map):
         TRAJECTORY_DISTANCE = value
@@ -350,21 +342,21 @@ def reconf_trajectory_inflate(value):
 
 def reconf_publish_cropped_map(value):
     """Callback for 'publish_cropped_map'."""
-    global map_pub
+    global _node_handle
 
-    rospy.loginfo("Reconfigure request: publish_cropped_map = %s" % value)
+    _node_handle.loginfo("Reconfigure request: publish_cropped_map = %s" % value)
 
-    if value and map_pub is None:
-        map_pub = rospy.Publisher(
+    if value and _node_handle.map_pub is None:
+        _node_handle.map_pub = _node_handle.Publisher(
             'reference_path/map',
             OccupancyGrid,
             queue_size = 1,
             latch = True
         )
         publish_map()
-    elif not value and map_pub is not None:
-        del map_pub
-        map_pub = None
+    elif not value and _node_handle.map_pub is not None:
+        del _node_handle.map_pub
+        _node_handle.map_pub = None
 
     return value
 
@@ -373,7 +365,7 @@ def reconf_reload_map(value):
     """Callback for 'reload_map'."""
     global RELOAD_MAP
 
-    rospy.loginfo("Reconfigure request: reload_map = %s" % value)
+    _node_handle.loginfo("Reconfigure request: reload_map = %s" % value)
 
     RELOAD_MAP = value
 
@@ -401,16 +393,16 @@ def create_surroundings(radius):
 
 def publish_map():
     """Publish inflated cropped map."""
-    global _map_loaded, _map_inflated, _info, _map_header, map_pub
+    global _map_loaded, _map_inflated, _info, _map_header
 
-    if _map_loaded and map_pub is not None:
+    if _map_loaded and _node_handle.map_pub is not None:
         map = OccupancyGrid()
         map.header = _map_header
-        map.header.stamp = rospy.Time(0)
+        map.header.stamp = _node_handle.get_clock().now().to_msg()
         map.info = _info
         map.data = list(_map_inflated.flatten())
 
-        map_pub.publish(map)
+        _node_handle.map_pub.publish(map)
 
 
 def inflate_map():
@@ -420,7 +412,7 @@ def inflate_map():
     #if not _map_loaded:
     #    return
 
-    rospy.loginfo("Inflating map...")
+    _node_handle.loginfo("Inflating map...")
 
     _map_inflated = numpy.zeros((_info.height, _info.width))
 
@@ -446,7 +438,7 @@ def inflate_map():
                 if _y + __y >= 0 and _y + __y < _info.height and _x + __x >= 0 and _x + __x < _info.width:
                     _map_inflated[_y + __y, _x + __x] = 100
 
-    rospy.loginfo("Map inflated.")
+    _node_handle.loginfo("Map inflated.")
 
     publish_map()
 
@@ -538,14 +530,14 @@ def _simple_trajectory():
 
     del pthm.points[-1]
 
-    path_pub.publish(pth)
-    pathm_pub.publish(pthm)
+    _node_handle.path_pub.publish(pth)
+    _node_handle.pathm_pub.publish(pthm)
 
 
     # Available surroundings
     # Store path to map and inflate it
     if _map_loaded:
-        rospy.loginfo("Inflating path...")
+        _node_handle.loginfo("Inflating path...")
 
         n_map = numpy.zeros((_info.height, _info.width))
 
@@ -630,9 +622,9 @@ def _simple_trajectory():
             p2.z = pr[3]
             gc.cells.append(p2)
 
-        infgc_pub.publish(gc)
+        _node_handle.infgc_pub.publish(gc)
 
-        rospy.loginfo("Path inflated.")
+        _node_handle.loginfo("Path inflated.")
 
     return
 
@@ -752,7 +744,7 @@ def map_callback(map):
                     mkr.points.append(p)
                     #gc.cells.append(p)
 
-        inf_pub.publish(mkr)
+        _node_handle.inf_pub.publish(mkr)
         #infgc_pub.publish(gc)
 
 
@@ -867,7 +859,7 @@ def clicked_point(data):
 
     marker.colors = colors
     marker.points = points
-    pnt_pub.publish(marker)
+    _node_handle.pnt_pub.publish(marker)
 
 
 def path_callback(data):
@@ -941,7 +933,7 @@ def load_data(filename, delimiter = ""):
 
     marker.colors = colors
     marker.points = points
-    pnt_pub.publish(marker)
+    _node_handle.pnt_pub.publish(marker)
 
 
 ######################
@@ -950,31 +942,39 @@ def load_data(filename, delimiter = ""):
 
 def start_node():
     """Starts a ROS node, registers the callbacks."""
-    global _closed_path
+    global _closed_path, _node_handle
 
-    # Let only one node run
-    rospy.init_node('simple_trajectory', anonymous=False)
+    _node_handle = Node("simple_trajectory")
 
     # Obtain parameters
-    if rospy.has_param("~closed_path"):
-        _closed_path = bool(rospy.get_param("~closed_path"))
+    if _node_handle.has_param("~closed_path"):
+        _closed_path = bool(_node_handle.get_param("~closed_path"))
 
-    if rospy.has_param("~input_file"):
-        load_data(str(rospy.get_param("~input_file")), str(rospy.get_param("~delimiter", "")))
+    if _node_handle.has_param("~input_file"):
+        load_data(str(_node_handle.get_param("~input_file")), str(_node_handle.get_param("~delimiter", "")))
 
     # Register callback
-    rospy.Subscriber("map", OccupancyGrid, map_callback)
-    rospy.Subscriber("clicked_point", PointStamped, clicked_point)
-    rospy.Subscriber("path", Path, path_callback)
+    _node_handle.Subscriber("map", OccupancyGrid, map_callback)
+    _node_handle.Subscriber("clicked_point", PointStamped, clicked_point)
+    _node_handle.Subscriber("path", Path, path_callback)
+
+
+    # Publishers
+    _node_handle.pnt_pub = _node_handle.Publisher('trajectory_points', Marker, queue_size = 1, latch = True)
+    _node_handle.path_pub = _node_handle.Publisher('reference_path/path', Path, queue_size = 1, latch = True)
+    _node_handle.pathm_pub = _node_handle.Publisher('reference_path/marker', Marker, queue_size = 1, latch = True)
+    _node_handle.map_pub = None
+    _node_handle.infgc_pub = _node_handle.Publisher('reference_path/gridcells', GridCells, queue_size = 1, latch = True)
+
 
     # Dynamic reconfigure
-    P.reconfigure(node = rospy)
+    P.reconfigure(node = _node_handle)
 
     # Function is_shutdown() reacts to exit flag (Ctrl+C, etc.)
-    while not rospy.is_shutdown():
+    while not _node_handle.is_shutdown():
 
         # Function spin() simply keeps python from exiting until this node is stopped.
-        rospy.spin()
+        _node_handle.spin()
 
 
 if __name__ == "__main__":
