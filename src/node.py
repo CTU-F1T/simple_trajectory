@@ -63,19 +63,14 @@ import math
 # Math engine / interpolation
 from scipy.interpolate import CubicSpline#, interp1d
 
-# Dynamic reconfigure
-import dynamic_reconfigure.server
-
 # Quaternion conversion
 #from tf.transformations import euler_from_quaternion
 
 # Progress printing
 import sys
 
-
-# Dynamic reconfigure types
-# simple_trajectory
-from simple_trajectory.cfg import dynsimpletrajectoryConfig
+# Dynamic Reconfigure / ParameterServer
+from autopsy.reconfigure import ParameterServer
 
 
 # Message types
@@ -233,6 +228,7 @@ from geometry_msgs.msg import Quaternion
 
 # Global variables
 _map_loaded = False
+_inflated_map = False
 _map = []
 _map = None
 _map_header = None
@@ -250,6 +246,53 @@ RELOAD_MAP = False
 _closed_path = False
 
 
+# Parameters
+P = ParameterServer()
+P.update([
+    # Path/Map parameters
+    ("trajectory_inflate", {
+        "default": 0,
+        "min": 0,
+        "max": 100,
+        "description": "[cells], path inflation radius.",
+        "callback": lambda value: reconf_trajectory_inflate(value)
+    }),
+    ("map_inflate", {
+        "default": 0,
+        "min": 0,
+        "max": 100,
+        "description": "[cells], map inflation radius.",
+        "callback": lambda value: reconf_map_inflate(value)
+    }),
+    ("publish_cropped_map", {
+        "default": False,
+        "description": "Publish internal cropped map.",
+        "callback": lambda value: reconf_publish_cropped_map(value)
+    }),
+    ("reload_map", {
+        "default": False,
+        "description": "Reload map when new one is received.",
+        "callback": lambda value: reconf_reload_map(value)
+    }),
+
+    # Path type
+    ("closed_path", {
+        "default": False,
+        "description": "Type of path received on topic / loaded from a file."                   # noqa:
+    }),
+
+    # Loading data from a file
+    ("input_file", {
+        "default": "",
+        "description": "Name of a file to load data from."
+    }),
+    ("delimiter", {
+        "default": "",
+        "description": "Delimiter used in the file. When empty, load file as npz."              # noqa:
+    }),
+])
+
+
 # Publishers
 pnt_pub = rospy.Publisher('trajectory_points', Marker, queue_size = 1, latch = True)
 path_pub = rospy.Publisher('reference_path/path', Path, queue_size = 1, latch = True)
@@ -263,49 +306,78 @@ infgc_pub = rospy.Publisher('reference_path/gridcells', GridCells, queue_size = 
 # Dynamic reconfigure
 ######################
 
-def reconf_callback(config, level):
-    """Callback for maintaining dynamic reconfigure of this node."""
-    global _trajectory_done, _trajectory_points, _map_loaded
-    global map_pub
-    global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
+def reconf_map_inflate(value):
+    """Callback for 'map_inflate'."""
+    global _map_loaded, _inflated_map
     global INFLATE_DISTANCE, INFLATE_AREA
-    global RELOAD_MAP
+    global TRAJECTORY_DISTANCE
 
-    rospy.loginfo("""Reconfigure Request: \n""" +
-                    """\tMap inflation: {map_inflate}\n""" \
-                    """\tTrajectory inflation: {trajectory_inflate}\n""" \
-                    """\tPublish cropped map: {publish_cropped_map}\n""" \
-                    """\tReload map: {reload_map}\n""" \
-                 .format(**config))
+    rospy.loginfo("Reconfigure request: map_inflate = %d" % value)
 
-    if config["publish_cropped_map"] and map_pub is None:
-        map_pub = rospy.Publisher('reference_path/map', OccupancyGrid, queue_size = 1, latch = True)
-        publish_map()
-    elif not config["publish_cropped_map"] and map_pub is not None:
-        del map_pub
-        map_pub = None
+    if _map_loaded and value != INFLATE_DISTANCE:
 
-    map_inflated = False
-
-    if _map_loaded and config["map_inflate"] != INFLATE_DISTANCE:
-        INFLATE_DISTANCE = config["map_inflate"]
+        INFLATE_DISTANCE = value
 
         INFLATE_AREA = create_surroundings(INFLATE_DISTANCE)
 
         inflate_map()
 
-        map_inflated = True
+        _inflated_map = True
 
-    if _trajectory_done and (config["trajectory_inflate"] != TRAJECTORY_DISTANCE or map_inflated):
-        TRAJECTORY_DISTANCE = config["trajectory_inflate"]
+        reconf_trajectory_inflate(TRAJECTORY_DISTANCE)
+
+    return value
+
+
+def reconf_trajectory_inflate(value):
+    """Callback for 'trajectory_inflate'."""
+    global _trajectory_done, _inflated_map
+    global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
+
+    rospy.loginfo("Reconfigure request: trajectory_inflate = %d" % value)
+
+    if _trajectory_done and (value != TRAJECTORY_DISTANCE or _inflated_map):
+        TRAJECTORY_DISTANCE = value
 
         INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
 
         simple_trajectory()
 
-    RELOAD_MAP = config["reload_map"]
+        _inflated_map = False
 
-    return config
+    return value
+
+
+def reconf_publish_cropped_map(value):
+    """Callback for 'publish_cropped_map'."""
+    global map_pub
+
+    rospy.loginfo("Reconfigure request: publish_cropped_map = %s" % value)
+
+    if value and map_pub is None:
+        map_pub = rospy.Publisher(
+            'reference_path/map',
+            OccupancyGrid,
+            queue_size = 1,
+            latch = True
+        )
+        publish_map()
+    elif not value and map_pub is not None:
+        del map_pub
+        map_pub = None
+
+    return value
+
+
+def reconf_reload_map(value):
+    """Callback for 'reload_map'."""
+    global RELOAD_MAP
+
+    rospy.loginfo("Reconfigure request: reload_map = %s" % value)
+
+    RELOAD_MAP = value
+
+    return value
 
 
 ######################
@@ -828,6 +900,9 @@ def load_data(filename, delimiter = ""):
     """
     global _trajectory_done, _trajectory_points, _closed_path
 
+    if filename == "":
+        return
+
     try:
         if delimiter == "":
             # We load only first two columns. Therefore, this can be used for trajectories, etc.
@@ -893,7 +968,7 @@ def start_node():
     rospy.Subscriber("path", Path, path_callback)
 
     # Dynamic reconfigure
-    srv = dynamic_reconfigure.server.Server(dynsimpletrajectoryConfig, reconf_callback)
+    P.reconfigure(node = rospy)
 
     # Function is_shutdown() reacts to exit flag (Ctrl+C, etc.)
     while not rospy.is_shutdown():

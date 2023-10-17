@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+### Added
+- `autopsy>=0.9.4` to the dependencies.
+
+### Removed
+- `dynamic_reconfigure` dependency.
+- `cfg/dynsimpletrajectory.cfg` file.
+
 ## 0.5.1 - 2023-10-11
 ### Added
 - Control points of the trajectory are published when loading data from a file.

@@ -22,12 +22,12 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <!-- build_depend libraries -->
-  <build_depend>dynamic_reconfigure</build_depend>
 
   <!-- exec_depend libraries -->
   <exec_depend>rospy</exec_depend>
   <exec_depend version_lte="1.16.0">python-numpy</exec_depend>
   <exec_depend version_lte="1.2.2">python-scipy</exec_depend>
+  <exec_depend version_gte="0.9.4">autopsy</exec_depend>
 
   <!-- exec_depend message types -->
   <exec_depend>geometry_msgs</exec_depend>
