@@ -953,14 +953,6 @@ def start_node(args = None):
 
     _node_handle = Node("simple_trajectory")
 
-    # Obtain parameters
-    # They are not yet implemented, so we need to do this ourselves.
-    if ROS_VERSION == 1:
-        if _node_handle.has_param("~closed_path"):
-            _closed_path = bool(_node_handle.get_param("~closed_path"))
-
-        if _node_handle.has_param("~input_file"):
-            load_data(str(_node_handle.get_param("~input_file")), str(_node_handle.get_param("~delimiter", "")))
 
     # Register callback
     _node_handle.Subscriber("map", OccupancyGrid, map_callback)
@@ -974,6 +966,16 @@ def start_node(args = None):
     _node_handle.pathm_pub = _node_handle.Publisher('reference_path/marker', Marker, queue_size = 1, latch = True)
     _node_handle.map_pub = None
     _node_handle.infgc_pub = _node_handle.Publisher('reference_path/gridcells', GridCells, queue_size = 1, latch = True)
+
+
+    # Obtain parameters
+    # They are not yet implemented, so we need to do this ourselves.
+    if ROS_VERSION == 1:
+        if _node_handle.has_param("~closed_path"):
+            _closed_path = bool(_node_handle.get_param("~closed_path"))
+
+        if _node_handle.has_param("~input_file"):
+            load_data(str(_node_handle.get_param("~input_file")), str(_node_handle.get_param("~delimiter", "")))
 
 
     # Dynamic reconfigure
