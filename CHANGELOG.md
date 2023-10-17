@@ -5,7 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
 ### Added
-- `autopsy>=0.9.4` to the dependencies.
+- `autopsy>0.9.4` to the dependencies.
+- ROS2 support.
+
+### Changed
+- Node is now executable using Python 3 as well.
 
 ### Removed
 - `dynamic_reconfigure` dependency.

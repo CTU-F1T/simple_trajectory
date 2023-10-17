@@ -19,15 +19,20 @@
 
   <url type="repository">https://github.com/CTU-F1T/simple_trajectory</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <!-- Build tool. -->
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
 
-  <!-- build_depend libraries -->
+  <!-- Packages dependencies. -->
+  <!-- Use exec_depend for Python dependencies, as the packages are required only when running. -->
+  <exec_depend condition="$ROS_VERSION == 1">rospy</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">rclpy</exec_depend>
 
-  <!-- exec_depend libraries -->
-  <exec_depend>rospy</exec_depend>
-  <exec_depend version_lte="1.16.0">python-numpy</exec_depend>
-  <exec_depend version_lte="1.2.2">python-scipy</exec_depend>
-  <exec_depend version_gte="0.9.4">autopsy</exec_depend>
+  <exec_depend version_lte="1.16.0" condition="$ROS_VERSION == 1">python-numpy</exec_depend>
+  <exec_depend version_lte="1.2.2" condition="$ROS_VERSION == 1">python-scipy</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">python-numpy</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">python-scipy</exec_depend>
+
+  <exec_depend version_gt="0.9.4">autopsy</exec_depend>
 
   <!-- exec_depend message types -->
   <exec_depend>geometry_msgs</exec_depend>
@@ -37,5 +42,10 @@
 
   <export>
     <index url="git@github.com:CTU-F1T/simple_trajectory.git" />
+    <!-- ROS1 Build type -->
+    <!-- Should not be required (as ROS1 defaults to catkin), but with the other dependency it is completely lost. -->
+    <build_type condition="$ROS_VERSION == 1">catkin</build_type>
+    <!-- ROS2 Build type -->
+    <build_type condition="$ROS_VERSION == 2">ament_python</build_type>
   </export>
 </package>
