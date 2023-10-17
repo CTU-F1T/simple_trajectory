@@ -43,10 +43,34 @@ Additionally, placing a point somewhere in the environment leads to finding two 
 
 - `python-numpy`
 - `python-scipy`
+- `autopsy>0.9.4`
 
 
 ## Usage
 
 ```
-roslaunch simple_trajectory start.launch
+rosrun simple_trajectory node.py
+rosrun simple_trajectory node.py _input_file:=FILENAME _delimiter:=DELIMITER _closed_path:=TRUE_OR_FALSE
 ```
+
+or
+
+```
+ros2 run simple_trajectory run
+ros2 run simple_trajectory run --ros-args -p input_file:=FILENAME -p delimiter:=DELIMITER -p closed_path:=TRUE_OR_FALSE
+```
+
+
+## Parameters
+
+- Path parameters
+  - `trajectory_inflate` (int): Radius of the path inflation in cells.
+  - `map_inflate` (int): Radius of map inflation in cells.
+  - `publish_cropped_map` (bool): When True, inflated and cropped map is published.
+  - `reload_map` (bool): When True, internal map is updated from the map topic.
+- Loading parameters
+  - `closed_path` (bool): When True, interpret the loaded file / received points as a closed path.
+  - `input_file` (str): When given, load points from the file. When `delimiter` is empty, load it as npz, otherwise load it as a csv.
+  - `delimiter` (str): Delimiter used in the csv file.
+
+_Note: Delimiter cannot be a comma, as ROS complains about it._
