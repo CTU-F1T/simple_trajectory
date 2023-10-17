@@ -900,10 +900,10 @@ def load_data(filename, delimiter = ""):
         if delimiter == "":
             # We load only first two columns. Therefore, this can be used for trajectories, etc.
             _trajectory_points = numpy.load(filename)[:, :2]
-            rospy.loginfo("Loaded %d points from %s using 'numpy.load()'." % (len(_trajectory_points), filename))
+            _node_handle.loginfo("Loaded %d points from %s using 'numpy.load()'." % (len(_trajectory_points), filename))
         else:
             _trajectory_points = numpy.loadtxt(filename, delimiter = delimiter)[:, :2]
-            rospy.loginfo("Loaded %d points (delimited by '%s') from %s using 'numpy.loadtxt()'." % (len(_trajectory_points), delimiter, filename))
+            _node_handle.loginfo("Loaded %d points (delimited by '%s') from %s using 'numpy.loadtxt()'." % (len(_trajectory_points), delimiter, filename))
 
         _trajectory_done = True
     except:
