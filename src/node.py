@@ -55,6 +55,7 @@ placed in-between of them.
 
 # ROS wrapper
 from autopsy.node import Node
+from autopsy.core import Core
 
 # Math engine
 import numpy
@@ -940,9 +941,14 @@ def load_data(filename, delimiter = ""):
 # Functions
 ######################
 
-def start_node():
+def start_node(args = None):
     """Starts a ROS node, registers the callbacks."""
     global _closed_path, _node_handle
+
+    if args is None:
+        args = sys.argv
+
+    Core.init(args = args)
 
     _node_handle = Node("simple_trajectory")
 
@@ -970,11 +976,9 @@ def start_node():
     # Dynamic reconfigure
     P.reconfigure(node = _node_handle)
 
-    # Function is_shutdown() reacts to exit flag (Ctrl+C, etc.)
-    while not _node_handle.is_shutdown():
+    Core.spin(_node_handle)
 
-        # Function spin() simply keeps python from exiting until this node is stopped.
-        _node_handle.spin()
+    Core.shutdown()
 
 
 if __name__ == "__main__":
