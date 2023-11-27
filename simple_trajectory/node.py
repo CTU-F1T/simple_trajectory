@@ -72,6 +72,9 @@ import tqdm
 # Dynamic Reconfigure / ParameterServer
 from autopsy.reconfigure import ParameterServer
 
+# Loading stored data
+import csv
+
 
 # Message types
 from std_msgs.msg import (
@@ -568,6 +571,20 @@ def multiply_quaternions(r, s):
     ])
 
 
+def list_intersection(list_a, list_b):
+    """Intersect two lists and find common elements.
+
+    Source:
+    https://www.geeksforgeeks.org/python-intersection-two-lists/
+    """
+    return [value for value in list_a if value in list_b]
+
+
+def list_contains(list_a, list_b):
+    """Check whether all elements if list_a are in the list_b."""
+    return len(list_a) == len(list_intersection(list_a, list_b))
+
+
 ######################
 # Callbacks
 ######################
@@ -797,10 +814,47 @@ def load_data(filename, delimiter = ""):
             )
 
         TRAJECTORY_DONE = True
-    except Exception as e:
-        NODE_HANDLE.logerror(
-            "Unable to load data from '%s': %s" % (filename, str(e))
-        )
+    except Exception as e1:
+        # Try to load it as csv
+        if delimiter == "":
+            NODE_HANDLE.logerror(
+                "Unable to load '%s' using 'numpy.load()': %s "
+                "\nSet delimiter to try to load it as a csv."
+                % (filename, str(e1))
+            )
+        else:
+            try:
+                with open(filename, "r") as f:
+                    reader = csv.DictReader(f, delimiter = delimiter)
+
+                    if not list_contains(["x_m", "y_m"], reader.fieldnames):
+                        raise ValueError(
+                            "file does not contain required fields "
+                            "'x_m' and 'y_m'"
+                        )
+
+                    TRAJECTORY_POINTS = numpy.asarray([
+                        [line["x_m"], line["y_m"]] for line in reader
+                    ])
+
+                    NODE_HANDLE.loginfo(
+                        "Loaded %d points (delimited by '%s') from %s "
+                        "using 'csv.DictReader()'."
+                        % (len(TRAJECTORY_POINTS), delimiter, filename)
+                    )
+
+                    TRAJECTORY_DONE = True
+            except Exception as e2:
+                NODE_HANDLE.logerror(
+                    "Unable to load '%s' using "
+                    "'numpy.loadtxt(delimiter='%s')': %s"
+                    % (filename, delimiter, str(e1))
+                )
+                NODE_HANDLE.logerror(
+                    "Unable to load '%s' using "
+                    "'csv.DictReader(delimiter='%s')': %s"
+                    % (filename, delimiter, str(e2))
+                )
         return
 
     simple_trajectory()
