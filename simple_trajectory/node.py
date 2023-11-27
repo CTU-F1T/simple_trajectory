@@ -159,7 +159,8 @@ P.update([
     ("delimiter", {
         "default": "",
         "description": (
-            "Delimiter used in the file. When empty, load file as npz."
+            "Delimiter used in the file. When empty, load file as npz. "
+            "Note: Use '\,' to set the delimiter to a comma."  # noqa: W605
         )
     }),
 ])
@@ -766,6 +767,15 @@ def load_data(filename, delimiter = ""):
     if not os.access(filename, os.O_RDONLY):
         NODE_HANDLE.logerror("File '%s' is not readable." % filename)
         return
+
+    # Support comma
+    # ROS1 does not allow to set a parameter to a single comma ','.
+    # It is probably caused by the underlying yaml loader.
+    # rospy.exceptions.ROSInitException: invalid command-line parameters:
+    # while parsing a block node
+    #  expected the node content, but found ','
+    if delimiter == "\,":  # noqa: W605
+        delimiter = ","
 
     try:
         if delimiter == "":
