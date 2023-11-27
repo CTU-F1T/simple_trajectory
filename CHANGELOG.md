@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - `tqdm` to the dependencies.
 - `.flake8` file with ignored codes.
 - Most of the flake8 errors are resolved.
+- File checks and exception catching when loading points from a file.
 
 ### Changed
 - Node is now executable using Python 3 as well.

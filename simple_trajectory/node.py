@@ -53,6 +53,8 @@ placed in-between of them.
 # Imports & Globals
 ######################
 
+import os
+
 # ROS wrapper
 from autopsy.node import Node
 from autopsy.core import Core, ROS_VERSION
@@ -757,6 +759,14 @@ def load_data(filename, delimiter = ""):
     if filename == "":
         return
 
+    if not os.path.exists(filename):
+        NODE_HANDLE.logerror("File '%s' does not exist." % filename)
+        return
+
+    if not os.access(filename, os.O_RDONLY):
+        NODE_HANDLE.logerror("File '%s' is not readable." % filename)
+        return
+
     try:
         if delimiter == "":
             # We load only first two columns.
@@ -777,8 +787,11 @@ def load_data(filename, delimiter = ""):
             )
 
         TRAJECTORY_DONE = True
-    except Exception:
-        raise
+    except Exception as e:
+        NODE_HANDLE.logerror(
+            "Unable to load data from '%s': %s" % (filename, str(e))
+        )
+        return
 
     simple_trajectory()
 
