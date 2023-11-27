@@ -93,24 +93,23 @@ from geometry_msgs.msg import (
 
 
 # Global variables
-_map_loaded = False
-_inflated_map = False
-_map = []
-_map = None
-_map_header = None
-_info = None
-_bounds = None
-_trajectory_points = []
-_trajectory_done = False
+MAP_LOADED = False
+INFLATED_MAP = False
+_MAP = None
+MAP_HEADER = None
+MAP_INFO = None
+BOUNDS = None
+TRAJECTORY_POINTS = []
+TRAJECTORY_DONE = False
 TRAJECTORY_DISTANCE = 0
 INFLATE_TRAJECTORY = None  # create_surroundings(TRAJECTORY_DISTANCE)
 INFLATE_DISTANCE = 0
 INFLATE_AREA = None  # create_surroundings(INFLATE_DISTANCE)
-_picking_up = False
-_pick_up_i = 0
+PICKING_UP = False
+PICK_UP_I = 0
 RELOAD_MAP = False
-_closed_path = False
-_node_handle = None  # Node handle, a way how to not rewrite everything
+CLOSED_PATH = False
+NODE_HANDLE = None  # Node handle, a way how to not rewrite everything
 
 
 # Parameters
@@ -170,13 +169,13 @@ P.update([
 
 def reconf_map_inflate(value):
     """Reconfigure callback for 'map_inflate'."""
-    global _map_loaded, _inflated_map
+    global MAP_LOADED, INFLATED_MAP
     global INFLATE_DISTANCE, INFLATE_AREA
     global TRAJECTORY_DISTANCE
 
-    _node_handle.loginfo("Reconfigure request: map_inflate = %d" % value)
+    NODE_HANDLE.loginfo("Reconfigure request: map_inflate = %d" % value)
 
-    if _map_loaded and value != INFLATE_DISTANCE:
+    if MAP_LOADED and value != INFLATE_DISTANCE:
 
         INFLATE_DISTANCE = value
 
@@ -184,7 +183,7 @@ def reconf_map_inflate(value):
 
         inflate_map()
 
-        _inflated_map = True
+        INFLATED_MAP = True
 
         reconf_trajectory_inflate(TRAJECTORY_DISTANCE)
 
@@ -193,44 +192,44 @@ def reconf_map_inflate(value):
 
 def reconf_trajectory_inflate(value):
     """Reconfigure callback for 'trajectory_inflate'."""
-    global _trajectory_done, _inflated_map
+    global TRAJECTORY_DONE, INFLATED_MAP
     global TRAJECTORY_DISTANCE, INFLATE_TRAJECTORY
 
-    _node_handle.loginfo(
+    NODE_HANDLE.loginfo(
         "Reconfigure request: trajectory_inflate = %d" % value
     )
 
-    if _trajectory_done and (value != TRAJECTORY_DISTANCE or _inflated_map):
+    if TRAJECTORY_DONE and (value != TRAJECTORY_DISTANCE or INFLATED_MAP):
         TRAJECTORY_DISTANCE = value
 
         INFLATE_TRAJECTORY = create_surroundings(TRAJECTORY_DISTANCE)
 
         simple_trajectory()
 
-        _inflated_map = False
+        INFLATED_MAP = False
 
     return value
 
 
 def reconf_publish_cropped_map(value):
     """Reconfigure callback for 'publish_cropped_map'."""
-    global _node_handle
+    global NODE_HANDLE
 
-    _node_handle.loginfo(
+    NODE_HANDLE.loginfo(
         "Reconfigure request: publish_cropped_map = %s" % value
     )
 
-    if value and _node_handle.map_pub is None:
-        _node_handle.map_pub = _node_handle.Publisher(
+    if value and NODE_HANDLE.map_pub is None:
+        NODE_HANDLE.map_pub = NODE_HANDLE.Publisher(
             'reference_path/map',
             OccupancyGrid,
             queue_size = 1,
             latch = True
         )
         publish_map()
-    elif not value and _node_handle.map_pub is not None:
-        del _node_handle.map_pub
-        _node_handle.map_pub = None
+    elif not value and NODE_HANDLE.map_pub is not None:
+        del NODE_HANDLE.map_pub
+        NODE_HANDLE.map_pub = None
 
     return value
 
@@ -239,7 +238,7 @@ def reconf_reload_map(value):
     """Reconfigure callback for 'reload_map'."""
     global RELOAD_MAP
 
-    _node_handle.loginfo("Reconfigure request: reload_map = %s" % value)
+    NODE_HANDLE.loginfo("Reconfigure request: reload_map = %s" % value)
 
     RELOAD_MAP = value
 
@@ -270,43 +269,43 @@ def create_surroundings(radius):
 
 def publish_map():
     """Publish inflated cropped map."""
-    global _map_loaded, _map_inflated, _info, _map_header
+    global MAP_LOADED, MAP_INFLATED, MAP_INFO, MAP_HEADER
 
-    if _map_loaded and _node_handle.map_pub is not None:
+    if MAP_LOADED and NODE_HANDLE.map_pub is not None:
         map = OccupancyGrid()
-        map.header = _map_header
-        map.header.stamp = _node_handle.get_clock().now().to_msg()
-        map.info = _info
-        map.data = list(_map_inflated.flatten())
+        map.header = MAP_HEADER
+        map.header.stamp = NODE_HANDLE.get_clock().now().to_msg()
+        map.info = MAP_INFO
+        map.data = list(MAP_INFLATED.flatten())
 
-        _node_handle.map_pub.publish(map)
+        NODE_HANDLE.map_pub.publish(map)
 
 
 def inflate_map():
     """Inflate the map and store it."""
-    global _map_loaded, _map, _map_header, _info, _map_inflated
+    global MAP_LOADED, _MAP, MAP_HEADER, MAP_INFO, MAP_INFLATED
 
-    _node_handle.loginfo("Inflating map...")
+    NODE_HANDLE.loginfo("Inflating map...")
 
-    _map_inflated = numpy.zeros((_info.height, _info.width))
+    MAP_INFLATED = numpy.zeros((MAP_INFO.height, MAP_INFO.width))
 
-    map_walls = numpy.where(_map == 100)
+    map_walls = numpy.where(_MAP == 100)
 
     # Add walls to the to-be-inflated map
     for _y, _x in zip(map_walls[0], map_walls[1]):
-        _map_inflated[_y, _x] = 100
+        MAP_INFLATED[_y, _x] = 100
 
 
     # Inflate the map
     for _y, _x in tqdm.tqdm(zip(map_walls[0], map_walls[1]), leave = False):
         for __x, __y in INFLATE_AREA:
             if (
-                _y + __y >= 0 and _y + __y < _info.height
-                and _x + __x >= 0 and _x + __x < _info.width
+                _y + __y >= 0 and _y + __y < MAP_INFO.height
+                and _x + __x >= 0 and _x + __x < MAP_INFO.width
             ):
-                _map_inflated[_y + __y, _x + __x] = 100
+                MAP_INFLATED[_y + __y, _x + __x] = 100
 
-    _node_handle.loginfo("Map inflated.")
+    NODE_HANDLE.loginfo("Map inflated.")
 
     publish_map()
 
@@ -329,19 +328,19 @@ def publish_trajectory_points():
         x = 0.15, y = 0.15, z = 0.15
     )
 
-    for i, p in enumerate(_trajectory_points):
+    for i, p in enumerate(TRAJECTORY_POINTS):
         marker.points.append(
             Point(
                 x = float(p[0]), y = float(p[1]), z = 0.0
             )
         )
 
-        if _picking_up and i == _pick_up_i:
+        if PICKING_UP and i == PICK_UP_I:
             marker.colors.append(
                 # Yellow (currently selected point)
                 ColorRGBA(r = 1.0, g = 1.0, b = 0.0, a = 1.0)
             )
-        elif not _trajectory_done and i == 0:
+        elif not TRAJECTORY_DONE and i == 0:
             marker.colors.append(
                 # Magenta (first point of non-finished trajectory)
                 ColorRGBA(r = 1.0, g = 0.0, b = 1.0, a = 1.0)
@@ -352,7 +351,7 @@ def publish_trajectory_points():
                 ColorRGBA(r = 1.0, g = 0.0, b = 0.0, a = 1.0)
             )
 
-    _node_handle.pnt_pub.publish(marker)
+    NODE_HANDLE.pnt_pub.publish(marker)
 
 
 ######################
@@ -364,14 +363,14 @@ def simple_trajectory():
 
     Wrapper that handles closed/unclosed paths.
     """
-    global _closed_path, _trajectory_points
+    global CLOSED_PATH, TRAJECTORY_POINTS
 
-    if _closed_path:
-        _trajectory_points = numpy.vstack(
-            (_trajectory_points, _trajectory_points[0])
+    if CLOSED_PATH:
+        TRAJECTORY_POINTS = numpy.vstack(
+            (TRAJECTORY_POINTS, TRAJECTORY_POINTS[0])
         )
         _simple_trajectory()
-        _trajectory_points = _trajectory_points[0:-1]
+        TRAJECTORY_POINTS = TRAJECTORY_POINTS[0:-1]
     else:
         _simple_trajectory()
 
@@ -386,16 +385,16 @@ def _simple_trajectory():
     https://stackoverflow.com/questions/52014197/how-to-interpolate-a-2d-curve-in-python
     profile_trajectory/profile_trajectory.py:interpolate_points()
     """
-    global _trajectory_points, _map_loaded, _map
-    global _info, _bounds, _map_inflated, _closed_path
+    global TRAJECTORY_POINTS, MAP_LOADED, _MAP
+    global MAP_INFO, BOUNDS, MAP_INFLATED, CLOSED_PATH
 
-    x, y = _trajectory_points.T
-    i = numpy.arange(len(_trajectory_points))
+    x, y = TRAJECTORY_POINTS.T
+    i = numpy.arange(len(TRAJECTORY_POINTS))
 
     distance = numpy.cumsum(
         numpy.sqrt(
             numpy.sum(
-                numpy.diff(_trajectory_points, axis = 0) ** 2, axis = 1
+                numpy.diff(TRAJECTORY_POINTS, axis = 0) ** 2, axis = 1
             )
         )
     )
@@ -405,8 +404,8 @@ def _simple_trajectory():
     alpha = numpy.linspace(0, 1, 440)
 
     ipol = CubicSpline(
-        distance, _trajectory_points, axis = 0,
-        bc_type = ("periodic" if _closed_path else "not-a-knot")
+        distance, TRAJECTORY_POINTS, axis = 0,
+        bc_type = ("periodic" if CLOSED_PATH else "not-a-knot")
     )(alpha)
 
     xi = ipol[:, 0]
@@ -443,38 +442,46 @@ def _simple_trajectory():
 
     del pthm.points[-1]
 
-    _node_handle.path_pub.publish(pth)
-    _node_handle.pathm_pub.publish(pthm)
+    NODE_HANDLE.path_pub.publish(pth)
+    NODE_HANDLE.pathm_pub.publish(pthm)
 
 
     # Available surroundings
     # Store path to map and inflate it
-    if _map_loaded:
-        _node_handle.loginfo("Inflating path...")
+    if MAP_LOADED:
+        NODE_HANDLE.loginfo("Inflating path...")
 
-        n_map = numpy.zeros((_info.height, _info.width))
+        n_map = numpy.zeros((MAP_INFO.height, MAP_INFO.width))
 
         for i in tqdm.tqdm(range(0, ln), leave = False):
-            _x = int((xi[i] - _info.origin.position.x) / _info.resolution)
-            _y = int((yi[i] - _info.origin.position.y) / _info.resolution)
+            _x = int(
+                (xi[i] - MAP_INFO.origin.position.x) / MAP_INFO.resolution
+            )
+            _y = int(
+                (yi[i] - MAP_INFO.origin.position.y) / MAP_INFO.resolution
+            )
 
             # Inflate
             for __x, __y in INFLATE_TRAJECTORY:
                 if (
-                    _y + __y >= 0 and _y + __y < _info.height
-                    and _x + __x >= 0 and _x + __x < _info.width
+                    _y + __y >= 0 and _y + __y < MAP_INFO.height
+                    and _x + __x >= 0 and _x + __x < MAP_INFO.width
                 ):
-                    if _map_inflated[_y + __y, _x + __x] == 0:
+                    if MAP_INFLATED[_y + __y, _x + __x] == 0:
                         n_map[_y + __y, _x + __x] = 1
 
         # Color the map and forget all disjoint regions
         # (disjoint from the path)
         for i in range(0, ln):
-            _x = int((xi[i] - _info.origin.position.x) / _info.resolution)
-            _y = int((yi[i] - _info.origin.position.y) / _info.resolution)
+            _x = int(
+                (xi[i] - MAP_INFO.origin.position.x) / MAP_INFO.resolution
+            )
+            _y = int(
+                (yi[i] - MAP_INFO.origin.position.y) / MAP_INFO.resolution
+            )
 
-            if _y >= 0 and _y < _info.height and _x >= 0 and _x < _info.width:
-                if n_map[_y, _x] == 1 and _map_inflated[_y, _x] == 0:
+            if 0 <= _y < MAP_INFO.height and 0 <= _x < MAP_INFO.width:
+                if n_map[_y, _x] == 1 and MAP_INFLATED[_y, _x] == 0:
                     n_map[_y, _x] = 2
 
         colored_cells = True
@@ -487,17 +494,17 @@ def _simple_trajectory():
             for _j, _i in zip(map_walls[0], map_walls[1]):
                 if (
                     (_j > 0 and n_map[_j - 1, _i] == 2)
-                    or (_j < _info.height - 1 and n_map[_j + 1, _i] == 2)
+                    or (_j < MAP_INFO.height - 1 and n_map[_j + 1, _i] == 2)
                     or (_i > 0 and n_map[_j, _i - 1] == 2)
-                    or (_i < _info.width - 1 and n_map[_j, _i + 1] == 2)
+                    or (_i < MAP_INFO.width - 1 and n_map[_j, _i + 1] == 2)
                 ):
                     n_map[_j, _i] = 2
                     colored_cells = True
 
         gc = GridCells()
         gc.header.frame_id = 'map'
-        gc.cell_width = _info.resolution
-        gc.cell_height = _info.resolution
+        gc.cell_width = MAP_INFO.resolution
+        gc.cell_height = MAP_INFO.resolution
         gc.cells = []
 
         map_walls = numpy.where(n_map == 2)
@@ -505,23 +512,23 @@ def _simple_trajectory():
         # Rotation
         # http://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
         q = numpy.asarray([
-            _info.origin.orientation.w,
-            _info.origin.orientation.x,
-            _info.origin.orientation.y,
-            _info.origin.orientation.z
+            MAP_INFO.origin.orientation.w,
+            MAP_INFO.origin.orientation.x,
+            MAP_INFO.origin.orientation.y,
+            MAP_INFO.origin.orientation.z
         ])
         qi = numpy.asarray([
-            _info.origin.orientation.w,
-            -_info.origin.orientation.x,
-            -_info.origin.orientation.y,
-            -_info.origin.orientation.z
+            MAP_INFO.origin.orientation.w,
+            -MAP_INFO.origin.orientation.x,
+            -MAP_INFO.origin.orientation.y,
+            -MAP_INFO.origin.orientation.z
         ])
 
         for _j, _i in zip(map_walls[0], map_walls[1]):
             p = numpy.asarray([
                 0,
-                _info.origin.position.x + _i * _info.resolution,
-                _info.origin.position.y + _j * _info.resolution,
+                MAP_INFO.origin.position.x + _i * MAP_INFO.resolution,
+                MAP_INFO.origin.position.y + _j * MAP_INFO.resolution,
                 0
             ])
 
@@ -533,9 +540,9 @@ def _simple_trajectory():
                 )
             )
 
-        _node_handle.infgc_pub.publish(gc)
+        NODE_HANDLE.infgc_pub.publish(gc)
 
-        _node_handle.loginfo("Path inflated.")
+        NODE_HANDLE.loginfo("Path inflated.")
 
     return
 
@@ -571,54 +578,54 @@ def map_callback(map):
     Note: This is not used at all. Maybe in the future it should check that
     the generated trajectory is within the bounds.
     """
-    global _map_loaded, _map, _map_header, _info, _bounds, _map_inflated
+    global MAP_LOADED, _MAP, MAP_HEADER, MAP_INFO, BOUNDS, MAP_INFLATED
     global RELOAD_MAP
 
-    if _map_loaded and not RELOAD_MAP:
+    if MAP_LOADED and not RELOAD_MAP:
         return
 
     # Load map
-    _map = numpy.array(map.data).reshape((map.info.height, map.info.width))
+    _MAP = numpy.array(map.data).reshape((map.info.height, map.info.width))
 
     # Save info
-    _info = map.info
-    _map_header = map.header
+    MAP_INFO = map.info
+    MAP_HEADER = map.header
 
     # Cut the map
     # Find first and last occurence of a non-(-1) value
     x_lim = numpy.take(
-        numpy.where(numpy.max(_map, axis=0) != -1)[0],
+        numpy.where(numpy.max(_MAP, axis=0) != -1)[0],
         [0, -1]
     )
 
     y_lim = numpy.take(
-        numpy.where(numpy.max(_map, axis=1) != -1)[0],
+        numpy.where(numpy.max(_MAP, axis=1) != -1)[0],
         [0, -1]
     )
 
-    _map = _map[y_lim[0]:y_lim[1], x_lim[0]:x_lim[1]]
+    _MAP = _MAP[y_lim[0]:y_lim[1], x_lim[0]:x_lim[1]]
 
 
     # Update metadata
-    _info.height = _map.shape[0]
-    _info.width = _map.shape[1]
-    _info.origin.position.x += x_lim[0] * map.info.resolution
-    _info.origin.position.y += y_lim[0] * map.info.resolution
+    MAP_INFO.height = _MAP.shape[0]
+    MAP_INFO.width = _MAP.shape[1]
+    MAP_INFO.origin.position.x += x_lim[0] * map.info.resolution
+    MAP_INFO.origin.position.y += y_lim[0] * map.info.resolution
 
     # xmin, xmax; ymin, ymax
-    _bounds = [
-        _info.origin.position.x,
-        _info.origin.position.x + _info.width * map.info.resolution,
-        _info.origin.position.y,
-        _info.origin.position.y + _info.height * map.info.resolution
+    BOUNDS = [
+        MAP_INFO.origin.position.x,
+        MAP_INFO.origin.position.x + MAP_INFO.width * map.info.resolution,
+        MAP_INFO.origin.position.y,
+        MAP_INFO.origin.position.y + MAP_INFO.height * map.info.resolution
     ]
 
-    _node_handle.logdebug(_bounds)
+    NODE_HANDLE.logdebug(BOUNDS)
 
     # Inflate map
     inflate_map()
 
-    _map_loaded = True
+    MAP_LOADED = True
     publish_map()
 
 
@@ -628,36 +635,36 @@ def clicked_point(data):
     Arguments:
     data -- received point, defined by geometry_msgs.msg/PointStamped
     """
-    global _trajectory_done, _trajectory_points
-    global _picking_up, _pick_up_i, _closed_path
+    global TRAJECTORY_DONE, TRAJECTORY_POINTS
+    global PICKING_UP, PICK_UP_I, CLOSED_PATH
 
     cpoint = numpy.asarray([data.point.x, data.point.y])
 
-    if len(_trajectory_points) == 0:
-        _trajectory_points = numpy.array([cpoint])
+    if len(TRAJECTORY_POINTS) == 0:
+        TRAJECTORY_POINTS = numpy.array([cpoint])
 
     else:
         # Find distances to all points
         dists = numpy.sqrt(
             numpy.sum(
-                numpy.power(_trajectory_points - cpoint, 2), axis = 1
+                numpy.power(TRAJECTORY_POINTS - cpoint, 2), axis = 1
             )
         )
 
         _dist = numpy.min(dists)
         _i = numpy.argmin(dists)
 
-        if _picking_up:
+        if PICKING_UP:
             if _dist < 0.15:
-                if _pick_up_i == _i:
+                if PICK_UP_I == _i:
                     # Complete the trajectory if this is the last point
                     if (
-                        not _trajectory_done
-                        and _i == len(_trajectory_points) - 1
-                        and len(_trajectory_points) > 1
+                        not TRAJECTORY_DONE
+                        and _i == len(TRAJECTORY_POINTS) - 1
+                        and len(TRAJECTORY_POINTS) > 1
                     ):
-                        _trajectory_done = True
-                        _closed_path = False
+                        TRAJECTORY_DONE = True
+                        CLOSED_PATH = False
 
                     # Place it back
                     else:
@@ -665,35 +672,35 @@ def clicked_point(data):
 
                 # Delete it
                 else:
-                    _trajectory_points = numpy.delete(
-                        _trajectory_points, _pick_up_i, axis = 0
+                    TRAJECTORY_POINTS = numpy.delete(
+                        TRAJECTORY_POINTS, PICK_UP_I, axis = 0
                     )
             else:
                 # Move the point
-                _trajectory_points[_pick_up_i, :] = cpoint
+                TRAJECTORY_POINTS[PICK_UP_I, :] = cpoint
 
-            _picking_up = False
+            PICKING_UP = False
         else:
             if _dist < 0.15:
                 # Close the loop
                 if (
-                    not _trajectory_done
+                    not TRAJECTORY_DONE
                     and _i == 0
-                    and len(_trajectory_points) > 2
+                    and len(TRAJECTORY_POINTS) > 2
                 ):
-                    _trajectory_done = True
-                    _closed_path = True
+                    TRAJECTORY_DONE = True
+                    CLOSED_PATH = True
 
                 # Pick
                 else:
-                    _pick_up_i = _i
-                    _picking_up = True
+                    PICK_UP_I = _i
+                    PICKING_UP = True
             else:
-                if not _trajectory_done:
+                if not TRAJECTORY_DONE:
                     # Place new point in order, as when building the path,
                     # we want to have control over this
-                    _trajectory_points = numpy.vstack(
-                        (_trajectory_points, cpoint)
+                    TRAJECTORY_POINTS = numpy.vstack(
+                        (TRAJECTORY_POINTS, cpoint)
                     )
 
                 else:
@@ -703,16 +710,16 @@ def clicked_point(data):
 
                     # Now we have index of end of the gap -> we can put
                     # this point on this index
-                    _trajectory_points = numpy.insert(
-                        _trajectory_points, closest_point_i, cpoint, axis = 0
+                    TRAJECTORY_POINTS = numpy.insert(
+                        TRAJECTORY_POINTS, closest_point_i, cpoint, axis = 0
                     )
 
     # Reinterpolate the path and recompute everything
     # Only when not picking up points
-    if _trajectory_done and not _picking_up:
+    if TRAJECTORY_DONE and not PICKING_UP:
         simple_trajectory()
 
-    _node_handle.logdebug(str(_trajectory_points.tolist()))
+    NODE_HANDLE.logdebug(str(TRAJECTORY_POINTS.tolist()))
 
     publish_trajectory_points()
 
@@ -723,11 +730,11 @@ def path_callback(data):
     Arguments:
     data -- received path, defined by nav_msgs.msg/Path
     """
-    global _trajectory_done, _trajectory_points
+    global TRAJECTORY_DONE, TRAJECTORY_POINTS
 
-    _trajectory_done = True
+    TRAJECTORY_DONE = True
 
-    _trajectory_points = numpy.asarray(
+    TRAJECTORY_POINTS = numpy.asarray(
         [[pose.pose.position.x, pose.pose.position.y] for pose in data.poses]
     )
 
@@ -745,7 +752,7 @@ def load_data(filename, delimiter = ""):
     When `delimiter` not passed, the data are loaded using
     numpy.load(). Otherwise numpy.loadtxt() is used.
     """
-    global _trajectory_done, _trajectory_points, _closed_path
+    global TRAJECTORY_DONE, TRAJECTORY_POINTS, CLOSED_PATH
 
     if filename == "":
         return
@@ -754,22 +761,22 @@ def load_data(filename, delimiter = ""):
         if delimiter == "":
             # We load only first two columns.
             # Therefore, this can be used for trajectories, etc.
-            _trajectory_points = numpy.load(filename)[:, :2]
-            _node_handle.loginfo(
+            TRAJECTORY_POINTS = numpy.load(filename)[:, :2]
+            NODE_HANDLE.loginfo(
                 "Loaded %d points from %s using 'numpy.load()'."
-                % (len(_trajectory_points), filename)
+                % (len(TRAJECTORY_POINTS), filename)
             )
         else:
-            _trajectory_points = numpy.loadtxt(
+            TRAJECTORY_POINTS = numpy.loadtxt(
                 filename, delimiter = delimiter
             )[:, :2]
-            _node_handle.loginfo(
+            NODE_HANDLE.loginfo(
                 "Loaded %d points (delimited by '%s') from %s "
                 "using 'numpy.loadtxt()'."
-                % (len(_trajectory_points), delimiter, filename)
+                % (len(TRAJECTORY_POINTS), delimiter, filename)
             )
 
-        _trajectory_done = True
+        TRAJECTORY_DONE = True
     except Exception:
         raise
 
@@ -784,34 +791,34 @@ def load_data(filename, delimiter = ""):
 
 def start_node(args = None):
     """Start a ROS node, registers the callbacks."""
-    global _closed_path, _node_handle
+    global CLOSED_PATH, NODE_HANDLE
 
     if args is None:
         args = sys.argv
 
     Core.init(args = args)
 
-    _node_handle = Node("simple_trajectory")
+    NODE_HANDLE = Node("simple_trajectory")
 
 
     # Register callback
-    _node_handle.Subscriber("map", OccupancyGrid, map_callback)
-    _node_handle.Subscriber("clicked_point", PointStamped, clicked_point)
-    _node_handle.Subscriber("path", Path, path_callback)
+    NODE_HANDLE.Subscriber("map", OccupancyGrid, map_callback)
+    NODE_HANDLE.Subscriber("clicked_point", PointStamped, clicked_point)
+    NODE_HANDLE.Subscriber("path", Path, path_callback)
 
 
     # Publishers
-    _node_handle.pnt_pub = _node_handle.Publisher(
+    NODE_HANDLE.pnt_pub = NODE_HANDLE.Publisher(
         'trajectory_points', Marker, queue_size = 1, latch = True
     )
-    _node_handle.path_pub = _node_handle.Publisher(
+    NODE_HANDLE.path_pub = NODE_HANDLE.Publisher(
         'reference_path/path', Path, queue_size = 1, latch = True
     )
-    _node_handle.pathm_pub = _node_handle.Publisher(
+    NODE_HANDLE.pathm_pub = NODE_HANDLE.Publisher(
         'reference_path/marker', Marker, queue_size = 1, latch = True
     )
-    _node_handle.map_pub = None
-    _node_handle.infgc_pub = _node_handle.Publisher(
+    NODE_HANDLE.map_pub = None
+    NODE_HANDLE.infgc_pub = NODE_HANDLE.Publisher(
         'reference_path/gridcells', GridCells, queue_size = 1, latch = True
     )
 
@@ -819,13 +826,13 @@ def start_node(args = None):
     # Obtain parameters
     # They are not yet implemented, so we need to do this ourselves.
     if ROS_VERSION == 1:
-        if _node_handle.has_param("~closed_path"):
-            _closed_path = bool(_node_handle.get_param("~closed_path"))
+        if NODE_HANDLE.has_param("~closed_path"):
+            CLOSED_PATH = bool(NODE_HANDLE.get_param("~closed_path"))
 
-        if _node_handle.has_param("~input_file"):
+        if NODE_HANDLE.has_param("~input_file"):
             load_data(
-                str(_node_handle.get_param("~input_file")),
-                str(_node_handle.get_param("~delimiter", ""))
+                str(NODE_HANDLE.get_param("~input_file")),
+                str(NODE_HANDLE.get_param("~delimiter", ""))
             )
 
 
@@ -833,18 +840,18 @@ def start_node(args = None):
     # In ROS2 we have to call this before 'get_parameter'.
     # As it sets values on the ROS Parameter Server, it
     # has to be called after 'get_param' in ROS1.
-    P.reconfigure(node = _node_handle)
+    P.reconfigure(node = NODE_HANDLE)
 
     if ROS_VERSION == 2:
-        _closed_path = _node_handle.get_parameter("closed_path").value
+        CLOSED_PATH = NODE_HANDLE.get_parameter("closed_path").value
 
         load_data(
-            _node_handle.get_parameter("input_file").value,
-            _node_handle.get_parameter("delimiter").value
+            NODE_HANDLE.get_parameter("input_file").value,
+            NODE_HANDLE.get_parameter("delimiter").value
         )
 
 
-    Core.spin(_node_handle)
+    Core.spin(NODE_HANDLE)
 
     Core.shutdown()
 
