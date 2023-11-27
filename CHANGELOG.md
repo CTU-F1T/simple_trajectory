@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Node is now executable using Python 3 as well.
 - Progress of inflation is now shown using tqdm progress bars.
 - Auxiliary prints are now printed only as debug messages.
+- Inflate area is reduced on creation, which should make inflation faster.
 
 ### Removed
 - `dynamic_reconfigure` dependency.

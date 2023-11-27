@@ -256,12 +256,16 @@ def create_surroundings(radius):
     Arguments:
     radius -- radius of the surrounding area, number of cells, int
     """
-    return numpy.array(
+    _area = numpy.array(
         numpy.meshgrid(
             range(-radius, radius + 1),
             range(-radius, radius + 1)
         )
     ).T.reshape(-1, 2)
+
+    return _area[
+        numpy.hypot(_area[:, 0], _area[:, 1]) <= radius, :
+    ]
 
 
 def publish_map():
@@ -282,31 +286,25 @@ def inflate_map():
     """Inflate the map and store it."""
     global _map_loaded, _map, _map_header, _info, _map_inflated
 
-    # if not _map_loaded:
-    #     return
-
     _node_handle.loginfo("Inflating map...")
 
     _map_inflated = numpy.zeros((_info.height, _info.width))
 
     map_walls = numpy.where(_map == 100)
-    # map_walls = numpy.where(_map > 0)
+
+    # Add walls to the to-be-inflated map
     for _y, _x in zip(map_walls[0], map_walls[1]):
         _map_inflated[_y, _x] = 100
 
-    i = len(map_walls[0])
 
+    # Inflate the map
     for _y, _x in tqdm.tqdm(zip(map_walls[0], map_walls[1]), leave = False):
-
-        i -= 1
-        # Inflate
         for __x, __y in INFLATE_AREA:
-            if __x**2 + __y**2 <= INFLATE_DISTANCE**2:
-                if (
-                    _y + __y >= 0 and _y + __y < _info.height
-                    and _x + __x >= 0 and _x + __x < _info.width
-                ):
-                    _map_inflated[_y + __y, _x + __x] = 100
+            if (
+                _y + __y >= 0 and _y + __y < _info.height
+                and _x + __x >= 0 and _x + __x < _info.width
+            ):
+                _map_inflated[_y + __y, _x + __x] = 100
 
     _node_handle.loginfo("Map inflated.")
 
