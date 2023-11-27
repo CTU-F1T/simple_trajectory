@@ -325,7 +325,7 @@ def publish_trajectory_points():
     marker.pose.orientation = Quaternion(
         x = 0.0, y = 0.0, z = 0.0, w = 1.0
     )
-    marker.scale.x = Vector3(
+    marker.scale = Vector3(
         x = 0.15, y = 0.15, z = 0.15
     )
 
