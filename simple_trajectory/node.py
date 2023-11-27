@@ -822,6 +822,7 @@ def load_data(filename, delimiter = ""):
                 "\nSet delimiter to try to load it as a csv."
                 % (filename, str(e1))
             )
+            return
         else:
             try:
                 with open(filename, "r") as f:
@@ -855,7 +856,7 @@ def load_data(filename, delimiter = ""):
                     "'csv.DictReader(delimiter='%s')': %s"
                     % (filename, delimiter, str(e2))
                 )
-        return
+                return
 
     simple_trajectory()
 
