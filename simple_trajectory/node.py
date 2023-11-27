@@ -835,7 +835,8 @@ def load_data(filename, delimiter = ""):
                         )
 
                     TRAJECTORY_POINTS = numpy.asarray([
-                        [line["x_m"], line["y_m"]] for line in reader
+                        [float(line["x_m"]), float(line["y_m"])]
+                        for line in reader
                     ])
 
                     NODE_HANDLE.loginfo(
