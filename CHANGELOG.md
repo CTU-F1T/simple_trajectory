@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - `autopsy>0.9.4` to the dependencies.
 - ROS2 support.
 - `tqdm` to the dependencies.
+- `.flake8` file with ignored codes.
+- Most of the flake8 errors are resolved.
 
 ### Changed
 - Node is now executable using Python 3 as well.
