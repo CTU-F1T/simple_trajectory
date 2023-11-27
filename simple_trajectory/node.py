@@ -61,10 +61,7 @@ from autopsy.core import Core, ROS_VERSION
 import numpy
 
 # Math engine / interpolation
-from scipy.interpolate import CubicSpline  # , interp1d
-
-# Quaternion conversion
-# from tf.transformations import euler_from_quaternion
+from scipy.interpolate import CubicSpline
 
 # Progress printing
 import sys
@@ -75,156 +72,23 @@ from autopsy.reconfigure import ParameterServer
 
 
 # Message types
-# ColorRGBA
-from std_msgs.msg import ColorRGBA
-#: float32 r
-#: float32 g
-#: float32 b
-#: float32 a
-
-# GridCells
-from nav_msgs.msg import GridCells
-# an array of cells in a 2D grid
-#: Header header
-#: float32 cell_width
-#: float32 cell_height
-#: geometry_msgs/Point[] cells
-
-# Header
-from std_msgs.msg import Header  # noqa: F401
-# Standard metadata for higher-level stamped data types.
-# This is generally used to communicate timestamped data
-# in a particular coordinate frame.
-#
-# sequence ID: consecutively increasing ID
-#: uint32 seq
-# Two-integer timestamp that is expressed as:
-# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
-# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
-# time-handling sugar is provided by the client library
-#: time stamp
-# Frame this data is associated with
-# 0: no frame
-# 1: global frame
-#: string frame_id
-
-# MapMetaData
-from nav_msgs.msg import MapMetaData  # noqa: F401
-# This hold basic information about the characterists of the OccupancyGrid
-#
-# The time at which the map was loaded
-#: time map_load_time
-# The map resolution [m/cell]
-#: float32 resolution
-# Map width [cells]
-#: uint32 width
-# Map height [cells]
-#: uint32 height
-# The origin of the map [m, m, rad].  This is the real-world pose of the
-# cell (0,0) in the map.
-#: geometry_msgs/Pose origin
-
-# Marker
-from visualization_msgs.msg import Marker
-# See http://www.ros.org/wiki/rviz/DisplayTypes/Marker and
-# http://www.ros.org/wiki/rviz/Tutorials/Markers%3A%20Basic%20Shapes
-# for more information on using this message with rviz
-#
-#: uint8 ARROW=0
-#: uint8 CUBE=1
-#: uint8 SPHERE=2
-#: uint8 CYLINDER=3
-#: uint8 LINE_STRIP=4
-#: uint8 LINE_LIST=5
-#: uint8 CUBE_LIST=6
-#: uint8 SPHERE_LIST=7
-#: uint8 POINTS=8
-#: uint8 TEXT_VIEW_FACING=9
-#: uint8 MESH_RESOURCE=10
-#: uint8 TRIANGLE_LIST=11
-#
-#: uint8 ADD=0
-#: uint8 MODIFY=0
-#: uint8 DELETE=2
-#: uint8 DELETEALL=3
-#
-#: Header header                        # header for time/frame information
-#: string ns                            # Namespace to place this object in... used in conjunction with id to create a unique name for the object
-#: int32 id                             # object ID useful in conjunction with the namespace for manipulating and deleting the object later
-#: int32 type                           # Type of object
-#: int32 action                         # 0 add/modify an object, 1 (deprecated), 2 deletes an object, 3 deletes all objects
-#: geometry_msgs/Pose pose              # Pose of the object
-#: geometry_msgs/Vector3 scale          # Scale of the object 1,1,1 means default (usually 1 meter square)
-#: std_msgs/ColorRGBA color             # Color [0.0-1.0]
-#: duration lifetime                    # How long the object should last before being automatically deleted.  0 means forever
-#: bool frame_locked                    # If this marker should be frame-locked, i.e. retransformed into its frame every timestep
-#
-# Only used if the type specified has some use for them (eg. POINTS, LINE_STRIP, ...)
-#: geometry_msgs/Point[] points
-# Only used if the type specified has some use for them (eg. POINTS, LINE_STRIP, ...)
-# number of colors must either be 0 or equal to the number of points
-# NOTE: alpha is not yet used
-#: std_msgs/ColorRGBA[] colors
-#
-# NOTE: only used for text markers
-#: string text
-#
-# NOTE: only used for MESH_RESOURCE markers
-#: string mesh_resource
-#: bool mesh_use_embedded_materials
-
-# OccupancyGrid
-from nav_msgs.msg import OccupancyGrid
-# This represents a 2-D grid map, in which each cell represents the probability of
-# occupancy.
-#
-#: Header header
-#
-# MetaData for the map
-#: MapMetaData info
-#
-# The map data, in row-major order, starting with (0,0).  Occupancy
-# probabilities are in the range [0,100].  Unknown is -1.
-#: int8[] data
-
-# Path
-from nav_msgs.msg import Path
-# An array of poses that represents a Path for a robot to follow
-#: Header header
-#: geometry_msgs/PoseStamped[] poses
-
-# Point
-from geometry_msgs.msg import Point
-# This contains the position of a point in free space
-#: float64 x
-#: float64 y
-#: float64 z
-
-# PointStamped
-from geometry_msgs.msg import PointStamped
-# This represents a Point with reference coordinate frame and timestamp
-#: Header header
-#: Point point
-
-# Pose
-from geometry_msgs.msg import Pose  # noqa: F401
-# A representation of pose in free space, composed of position and orientation.
-#: Point position
-#: Quaternion orientation
-
-# PoseStamped
-from geometry_msgs.msg import PoseStamped
-# A Pose with reference coordinate frame and timestamp
-#: Header header
-#: Pose pose
-
-# Quaternion
-from geometry_msgs.msg import Quaternion
-# This represents an orientation in free space in quaternion form.
-#: float64 x
-#: float64 y
-#: float64 z
-#: float64 w
+from std_msgs.msg import (
+    ColorRGBA,
+)
+from nav_msgs.msg import (
+    GridCells,
+    OccupancyGrid,
+    Path,
+)
+from visualization_msgs.msg import (
+    Marker,
+)
+from geometry_msgs.msg import (
+    Point,
+    PointStamped,
+    PoseStamped,
+    Quaternion,
+)
 
 
 # Global variables
@@ -280,7 +144,9 @@ P.update([
     # Path type
     ("closed_path", {
         "default": False,
-        "description": "Type of path received on topic / loaded from a file."                   # noqa:
+        "description": (
+            "Type of path received on topic / loaded from a file."
+        )
     }),
 
     # Loading data from a file
@@ -290,7 +156,9 @@ P.update([
     }),
     ("delimiter", {
         "default": "",
-        "description": "Delimiter used in the file. When empty, load file as npz."              # noqa:
+        "description": (
+            "Delimiter used in the file. When empty, load file as npz."
+        )
     }),
 ])
 
@@ -480,12 +348,6 @@ def _simple_trajectory():
 
     x, y = _trajectory_points.T
     i = numpy.arange(len(_trajectory_points))
-
-    # 5x the original number of pointsf
-    # interp_i = numpy.linspace(0, i.max(), 80 * i.max())
-
-    # xi = interp1d(i, x, kind='cubic')(interp_i)
-    # yi = interp1d(i, y, kind='cubic')(interp_i)
 
     distance = numpy.cumsum(
         numpy.sqrt(
@@ -715,43 +577,6 @@ def map_callback(map):
 
     # Inflate map
     inflate_map()
-
-    # map.info = _info
-    # map.data = list(_map_inflated.flatten())
-    #
-    # map_pub.publish(map)
-
-    if False:
-        mkr = Marker()
-        mkr.header.frame_id = 'map'
-        mkr.type = 8
-        mkr.scale.x = 0.05
-        mkr.scale.y = 0.05
-        mkr.color.a = 1.0
-        mkr.color.r = 0.1
-        mkr.color.g = 1.0
-        mkr.color.b = 0.2
-        mkr.points = []
-
-        # gc = GridCells()
-        # gc.header = map.header
-        # gc.cell_width = map.info.resolution
-        # gc.cell_height = map.info.resolution
-        # gc.cells = []
-
-        for _x in range(_info.width):
-            for _y in range(_info.height):
-                if _map_inflated[_y, _x] == 0:
-                    p = Point()
-                    p.x = _info.origin.position.x + _x * map.info.resolution
-                    p.y = _info.origin.position.y + _y * map.info.resolution
-                    p.z = 0.0
-                    mkr.points.append(p)
-                    # gc.cells.append(p)
-
-        _node_handle.inf_pub.publish(mkr)
-        # infgc_pub.publish(gc)
-
 
     _map_loaded = True
     publish_map()

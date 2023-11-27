@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - `dynamic_reconfigure` dependency.
 - `cfg/dynsimpletrajectory.cfg` file.
 - Length of the path is no longer printed out.
+- Unused code and various comments (e.g., message definitions).
 
 ## 0.5.1 - 2023-10-11
 ### Added
