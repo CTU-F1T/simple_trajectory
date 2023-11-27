@@ -88,6 +88,7 @@ from geometry_msgs.msg import (
     PointStamped,
     PoseStamped,
     Quaternion,
+    Vector3,
 )
 
 
@@ -310,6 +311,50 @@ def inflate_map():
     _node_handle.loginfo("Map inflated.")
 
     publish_map()
+
+
+######################
+# Publish utilities
+######################
+
+def publish_trajectory_points():
+    """Publish current trajectory points."""
+    # Marker message
+    marker = Marker()
+    marker.header.frame_id = "map"
+    marker.type = marker.SPHERE_LIST
+    marker.action = marker.ADD
+    marker.pose.orientation = Quaternion(
+        x = 0.0, y = 0.0, z = 0.0, w = 1.0
+    )
+    marker.scale.x = Vector3(
+        x = 0.15, y = 0.15, z = 0.15
+    )
+
+    for i, p in enumerate(_trajectory_points):
+        marker.points.append(
+            Point(
+                x = float(p[0]), y = float(p[1]), z = 0.0
+            )
+        )
+
+        if _picking_up and i == _pick_up_i:
+            marker.colors.append(
+                # Yellow (currently selected point)
+                ColorRGBA(r = 1.0, g = 1.0, b = 0.0, a = 1.0)
+            )
+        elif not _trajectory_done and i == 0:
+            marker.colors.append(
+                # Magenta (first point of non-finished trajectory)
+                ColorRGBA(r = 1.0, g = 0.0, b = 1.0, a = 1.0)
+            )
+        else:
+            marker.colors.append(
+                # Red (any other point)
+                ColorRGBA(r = 1.0, g = 0.0, b = 0.0, a = 1.0)
+            )
+
+    _node_handle.pnt_pub.publish(marker)
 
 
 ######################
@@ -674,43 +719,7 @@ def clicked_point(data):
 
     _node_handle.logdebug(str(_trajectory_points.tolist()))
 
-    # Marker message
-    marker = Marker()
-    marker.header.frame_id = "map"
-    marker.type = marker.SPHERE_LIST
-    marker.action = marker.ADD
-    marker.pose.orientation = Quaternion(
-        x = 0.0, y = 0.0, z = 0.0, w = 1.0
-    )
-    marker.scale.x = 0.15
-    marker.scale.y = 0.15
-    marker.scale.z = 0.15
-
-    points = []
-    colors = []
-
-    for i, p in enumerate(_trajectory_points):
-        pnt = Point()
-        pnt.x = p[0]
-        pnt.y = p[1]
-        pnt.z = 0.0
-        points.append(pnt)
-        if _picking_up and i == _pick_up_i:
-            colors.append(
-                ColorRGBA(r = 1.0, g = 1.0, b = 0.0, a = 1.0)
-            )
-        elif not _trajectory_done and i == 0:
-            colors.append(
-                ColorRGBA(r = 1.0, g = 0.0, b = 1.0, a = 1.0)
-            )
-        else:
-            colors.append(
-                ColorRGBA(r = 1.0, g = 0.0, b = 0.0, a = 1.0)
-            )
-
-    marker.colors = colors
-    marker.points = points
-    _node_handle.pnt_pub.publish(marker)
+    publish_trajectory_points()
 
 
 def path_callback(data):
@@ -771,34 +780,7 @@ def load_data(filename, delimiter = ""):
 
     simple_trajectory()
 
-    # Marker message
-    marker = Marker()
-    marker.header.frame_id = "map"
-    marker.type = marker.SPHERE_LIST
-    marker.action = marker.ADD
-    marker.pose.orientation = Quaternion(
-        x = 0.0, y = 0.0, z = 0.0, w = 1.0
-    )
-    marker.scale.x = 0.15
-    marker.scale.y = 0.15
-    marker.scale.z = 0.15
-
-    points = []
-    colors = []
-
-    for i, p in enumerate(_trajectory_points):
-        pnt = Point()
-        pnt.x = p[0]
-        pnt.y = p[1]
-        pnt.z = 0.0
-        points.append(pnt)
-        colors.append(
-            ColorRGBA(r = 1.0, g = 0.0, b = 0.0, a = 1.0)
-        )
-
-    marker.colors = colors
-    marker.points = points
-    _node_handle.pnt_pub.publish(marker)
+    publish_trajectory_points()
 
 
 ######################
