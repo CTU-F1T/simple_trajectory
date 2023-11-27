@@ -573,7 +573,7 @@ def map_callback(map):
         _info.origin.position.y + _info.height * map.info.resolution
     ]
 
-    print (_bounds)
+    _node_handle.logdebug(_bounds)
 
     # Inflate map
     inflate_map()
@@ -672,7 +672,7 @@ def clicked_point(data):
     if _trajectory_done and not _picking_up:
         simple_trajectory()
 
-    print(str(_trajectory_points.tolist()))
+    _node_handle.logdebug(str(_trajectory_points.tolist()))
 
     # Marker message
     marker = Marker()
