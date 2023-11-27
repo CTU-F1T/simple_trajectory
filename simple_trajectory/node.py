@@ -412,38 +412,34 @@ def _simple_trajectory():
     xi = ipol[:, 0]
     yi = ipol[:, 1]
 
-    poses = []
     ln = xi.shape
     ln = ln[0]
 
-    pthm = Marker()
-    pthm.header.frame_id = 'map'
-    pthm.type = 8
-    pthm.scale.x = 0.05
-    pthm.scale.y = 0.05
-    pthm.color.a = 1.0
-    pthm.color.r = 0.1
-    pthm.color.g = 1.0
-    pthm.color.b = 0.2
-    pthm.points = []
-
-    for i in range(0, ln):
-        ps = PoseStamped()
-        ps.header.frame_id = 'map'
-        ps.pose.position.x = xi[i]
-        ps.pose.position.y = yi[i]
-        ps.pose.position.z = 0.0
-        poses.append(ps)
-
-        p = Point()
-        p.x = xi[i]
-        p.y = yi[i]
-        p.z = 0.0
-        pthm.points.append(p)
-
     pth = Path()
     pth.header.frame_id = 'map'
-    pth.poses = poses
+
+    pthm = Marker()
+    pthm.header.frame_id = 'map'
+    pthm.type = Marker.POINTS
+    pthm.scale = Vector3(
+        x = 0.05, y = 0.05, z = 0.0
+    )
+    pthm.color = ColorRGBA(
+        r = 0.1, g = 1.0, b = 0.2, a = 1.0
+    )
+
+    for i in range(0, ln):
+        _p = Point(
+            x = float(xi[i]), y = float(yi[i]), z = 0.0
+        )
+
+        ps = PoseStamped()
+        ps.header.frame_id = 'map'
+        ps.pose.position = _p
+        pth.poses.append(ps)
+
+        pthm.points.append(_p)
+
 
     del pthm.points[-1]
 
@@ -464,13 +460,12 @@ def _simple_trajectory():
 
             # Inflate
             for __x, __y in INFLATE_TRAJECTORY:
-                if __x**2 + __y**2 <= TRAJECTORY_DISTANCE**2:
-                    if (
-                        _y + __y >= 0 and _y + __y < _info.height
-                        and _x + __x >= 0 and _x + __x < _info.width
-                    ):
-                        if _map_inflated[_y + __y, _x + __x] == 0:
-                            n_map[_y + __y, _x + __x] = 1
+                if (
+                    _y + __y >= 0 and _y + __y < _info.height
+                    and _x + __x >= 0 and _x + __x < _info.width
+                ):
+                    if _map_inflated[_y + __y, _x + __x] == 0:
+                        n_map[_y + __y, _x + __x] = 1
 
         # Color the map and forget all disjoint regions
         # (disjoint from the path)
@@ -490,10 +485,12 @@ def _simple_trajectory():
             map_walls = numpy.where(n_map == 1)
 
             for _j, _i in zip(map_walls[0], map_walls[1]):
-                if (_j > 0 and n_map[_j - 1, _i] == 2) or \
-                   (_j < _info.height - 1 and n_map[_j + 1, _i] == 2) or \
-                   (_i > 0 and n_map[_j, _i - 1] == 2) or \
-                   (_i < _info.width - 1 and n_map[_j, _i + 1] == 2):
+                if (
+                    (_j > 0 and n_map[_j - 1, _i] == 2)
+                    or (_j < _info.height - 1 and n_map[_j + 1, _i] == 2)
+                    or (_i > 0 and n_map[_j, _i - 1] == 2)
+                    or (_i < _info.width - 1 and n_map[_j, _i + 1] == 2)
+                ):
                     n_map[_j, _i] = 2
                     colored_cells = True
 
@@ -530,11 +527,11 @@ def _simple_trajectory():
 
             pr = multiply_quaternions(multiply_quaternions(qi, p), q)
 
-            p2 = Point()
-            p2.x = pr[1]
-            p2.y = pr[2]
-            p2.z = pr[3]
-            gc.cells.append(p2)
+            gc.cells.append(
+                Point(
+                    x = float(pr[1]), y = float(pr[2]), z = float(pr[3])
+                )
+            )
 
         _node_handle.infgc_pub.publish(gc)
 
