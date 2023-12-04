@@ -768,6 +768,9 @@ def load_data(filename, delimiter = ""):
     filename -- path to a file to load, str
     delimiter -- delimiter of the data, str, defaults to ""
 
+    Returns:
+    success
+
     Note:
     When `delimiter` not passed, the data are loaded using
     numpy.load(). Otherwise numpy.loadtxt() is used.
@@ -775,15 +778,15 @@ def load_data(filename, delimiter = ""):
     global TRAJECTORY_DONE, TRAJECTORY_POINTS, CLOSED_PATH
 
     if filename == "":
-        return
+        return False
 
     if not os.path.exists(filename):
         NODE_HANDLE.logerror("File '%s' does not exist." % filename)
-        return
+        return False
 
     if not os.access(filename, os.O_RDONLY):
         NODE_HANDLE.logerror("File '%s' is not readable." % filename)
-        return
+        return False
 
     # Support comma
     # ROS1 does not allow to set a parameter to a single comma ','.
@@ -822,7 +825,7 @@ def load_data(filename, delimiter = ""):
                 "\nSet delimiter to try to load it as a csv."
                 % (filename, str(e1))
             )
-            return
+            return False
         else:
             try:
                 with open(filename, "r") as f:
@@ -857,11 +860,13 @@ def load_data(filename, delimiter = ""):
                     "'csv.DictReader(delimiter='%s')': %s"
                     % (filename, delimiter, str(e2))
                 )
-                return
+                return False
 
     simple_trajectory()
 
     publish_trajectory_points()
+
+    return True
 
 
 ######################

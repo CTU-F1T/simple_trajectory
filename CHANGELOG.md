@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Progress of inflation is now shown using tqdm progress bars.
 - Auxiliary prints are now printed only as debug messages.
 - Inflate area is reduced on creation, which should make inflation faster.
+- Function 'load_data()' now returns whether the data loading was successful.
 
 ### Removed
 - `dynamic_reconfigure` dependency.
