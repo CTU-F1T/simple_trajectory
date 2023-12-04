@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - File checks and exception catching when loading points from a file.
 - Support for ',' delimiter for loading the data.
 - Support for loading the data from a 'ng_trajectory' csv file.
+- Callback for `input_file` so that the file can be changed during runtime.
 
 ### Changed
 - Node is now executable using Python 3 as well.

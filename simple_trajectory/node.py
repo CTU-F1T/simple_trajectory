@@ -157,7 +157,8 @@ P.update([
     # Loading data from a file
     ("input_file", {
         "default": "",
-        "description": "Name of a file to load data from."
+        "description": "Name of a file to load data from.",
+        "callback": lambda value: reconf_input_file(value)
     }),
     ("delimiter", {
         "default": "",
@@ -249,6 +250,21 @@ def reconf_reload_map(value):
     RELOAD_MAP = value
 
     return value
+
+
+def reconf_input_file(value):
+    """Reconfigure callback for 'input_file'."""
+    NODE_HANDLE.loginfo("Reconfigure request: input_file = %s" % value)
+
+    ret = load_data(
+        str(value),
+        str(P.delimiter.value)
+    )
+
+    if ret:
+        return value
+    else:
+        return P.input_file.value
 
 
 ######################
