@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Auxiliary prints are now printed only as debug messages.
 - Inflate area is reduced on creation, which should make inflation faster.
 - Function 'load_data()' now returns whether the data loading was successful.
+- Values of the parameters `input_file` and `delimiter` are stored in ParameterServer object.
 
 ### Removed
 - `dynamic_reconfigure` dependency.

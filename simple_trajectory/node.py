@@ -914,10 +914,16 @@ def start_node(args = None):
             CLOSED_PATH = bool(NODE_HANDLE.get_param("~closed_path"))
 
         if NODE_HANDLE.has_param("~input_file"):
-            load_data(
+            loaded = load_data(
                 str(NODE_HANDLE.get_param("~input_file")),
                 str(NODE_HANDLE.get_param("~delimiter", ""))
             )
+
+            P.input_file = (
+                NODE_HANDLE.get_param("~input_file")
+                if loaded else ""
+            )
+            P.delimiter = NODE_HANDLE.get_param("~delimiter", "")
 
 
     # Dynamic reconfigure
@@ -929,10 +935,16 @@ def start_node(args = None):
     if ROS_VERSION == 2:
         CLOSED_PATH = NODE_HANDLE.get_parameter("closed_path").value
 
-        load_data(
+        loaded = load_data(
             NODE_HANDLE.get_parameter("input_file").value,
             NODE_HANDLE.get_parameter("delimiter").value
         )
+
+        P.input_file = (
+            NODE_HANDLE.get_parameter("input_file").value
+            if loaded else ""
+        )
+        P.delimiter = NODE_HANDLE.get_parameter("delimiter").value
 
 
     Core.spin(NODE_HANDLE)
