@@ -75,6 +75,11 @@ from autopsy.reconfigure import ParameterServer
 # Loading stored data
 import csv
 
+# Transformation of the trajectory
+from tf.transformations import (
+    quaternion_matrix
+)
+
 
 # Message types
 from std_msgs.msg import (
@@ -777,6 +782,55 @@ def path_callback(data):
     simple_trajectory()
 
 
+def goal_callback(data):
+    """Obtain the track pose from rViz and transform the track accordingly.
+
+    Arguments:
+    data -- received pose, defined by geometry_msgs.msg/PoseStamped
+
+    Note: The position corresponds to the new location of the trajectory's
+          first point.
+    """
+    global TRAJECTORY_DONE, TRAJECTORY_POINTS
+
+    if not TRAJECTORY_DONE:
+        # Trajectory not finished, so omit this.
+        return
+
+    # Obtain rotation matrix
+    R = quaternion_matrix([
+        data.pose.orientation.x,
+        data.pose.orientation.y,
+        data.pose.orientation.z,
+        data.pose.orientation.w
+    ])
+
+    # Transform all trajectory points
+    TRAJECTORY_POINTS = numpy.asarray([
+        numpy.add(
+            numpy.matmul(
+                R,
+                [
+                    # Shift TP[0] to the origin.
+                    _x - TRAJECTORY_POINTS[0][0],
+                    _y - TRAJECTORY_POINTS[0][1],
+                    0,
+                    1
+                ]
+            )[:2],
+            [
+                data.pose.position.x,
+                data.pose.position.y
+            ]  # Just adding it is enough as it contains the +TP[0].
+        )
+        for _x, _y in TRAJECTORY_POINTS
+    ])
+
+    simple_trajectory()
+
+    publish_trajectory_points()
+
+
 def load_data(filename, delimiter = ""):
     """Load points from a file.
 
@@ -905,6 +959,7 @@ def start_node(args = None):
     NODE_HANDLE.Subscriber("map", OccupancyGrid, map_callback)
     NODE_HANDLE.Subscriber("clicked_point", PointStamped, clicked_point)
     NODE_HANDLE.Subscriber("path", Path, path_callback)
+    NODE_HANDLE.Subscriber("move_base_simple/goal", PoseStamped, goal_callback)
 
 
     # Publishers
