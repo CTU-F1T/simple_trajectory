@@ -150,6 +150,12 @@ P.update([
         "description": "Reload map when new one is received.",
         "callback": lambda value: reconf_reload_map(value)
     }),
+    ("path_length", {
+        "default": 440,
+        "min": 1,
+        "max": 2000,
+        "description": "[points], number of points in the path.",
+    }),
 
     # Path type
     ("closed_path", {
@@ -427,8 +433,7 @@ def _simple_trajectory():
     )
     distance = numpy.insert(distance, 0, 0) / distance[-1]
 
-    # TODO: Make this as a parameter.
-    alpha = numpy.linspace(0, 1, 440)
+    alpha = numpy.linspace(0, 1, P.path_length)
 
     ipol = CubicSpline(
         distance, TRAJECTORY_POINTS, axis = 0,
