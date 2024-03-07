@@ -435,13 +435,58 @@ def _simple_trajectory():
 
     alpha = numpy.linspace(0, 1, P.path_length)
 
-    ipol = CubicSpline(
+    spline = CubicSpline(
         distance, TRAJECTORY_POINTS, axis = 0,
         bc_type = ("periodic" if CLOSED_PATH else "not-a-knot")
-    )(alpha)
+    )
 
+    # First interpolation, this one is really rough
+    ipol = spline(alpha)
     xi = ipol[:, 0]
     yi = ipol[:, 1]
+
+    # Create an alternative spline to obtain arc-length parameterization
+    # At first, compute the delta-distance between consecutive points.
+    # Note that first and last points are repeated
+    ipol_dists = numpy.hypot(xi[1:] - xi[:-1], yi[1:] - yi[:-1])
+
+    # Do a cumulative sum to obtain arc length
+    ipol_progress = numpy.hstack((0, numpy.cumsum(ipol_dists)))
+
+    # Create a new spline that serves as an arc-length approximation
+    # ipol_progress is normalized
+    spline_al = CubicSpline(
+        ipol_progress / ipol_progress[-1], alpha, axis=0
+    )
+
+    # Perform a second interpolation with adapted alpha
+    # alpha is now treated as normalized length over the spline
+    # spline_al converts alpha to 's'; a spline parameter
+    ipol = spline(spline_al(alpha))
+    xi = ipol[:, 0]
+    yi = ipol[:, 1]
+
+    # First and last points are repeated
+    dists = numpy.hypot(xi[1:] - xi[:-1], yi[1:] - yi[:-1])
+
+    NODE_HANDLE.loginfo(
+        "Interpolating points to obtain %d points..."
+        % P.path_length
+    )
+
+    NODE_HANDLE.loginfo(
+        "Rough interpolation: min: %f, avg: %f, max: %f"
+        % (
+            numpy.min(ipol_dists),
+            numpy.mean(ipol_dists),
+            numpy.max(ipol_dists)
+        )
+    )
+
+    NODE_HANDLE.loginfo(
+        "Improved interpolation: min: %f, avg: %f, max: %f"
+        % (numpy.min(dists), numpy.mean(dists), numpy.max(dists))
+    )
 
     ln = xi.shape
     ln = ln[0]

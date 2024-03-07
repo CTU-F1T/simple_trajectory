@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Inflate area is reduced on creation, which should make inflation faster.
 - Function 'load_data()' now returns whether the data loading was successful.
 - Values of the parameters `input_file` and `delimiter` are stored in ParameterServer object.
+- Interpolation is now performed twice, to obtain equidistant path points.
 
 ### Removed
 - `dynamic_reconfigure` dependency.
