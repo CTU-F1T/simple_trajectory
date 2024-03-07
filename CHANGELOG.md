@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Callback for `input_file` so that the file can be changed during runtime.
 - Subscriber for `move_base_simple/goal` to rotate and translate the trajectory.
 - Parameter `path_length` to change the number of points in the generated path.
+- Parameter `double_interpolation` to disable two-pass interpolation.
 
 ### Changed
 - Node is now executable using Python 3 as well.

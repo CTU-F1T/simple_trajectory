@@ -156,6 +156,11 @@ P.update([
         "max": 2000,
         "description": "[points], number of points in the path.",
     }),
+    ("double_interpolation", {
+        "default": True,
+        "description": "Perform a double interpolation to obtain truly "
+                       "equidistant path points.",
+    }),
 
     # Path type
     ("closed_path", {
@@ -435,6 +440,11 @@ def _simple_trajectory():
 
     alpha = numpy.linspace(0, 1, P.path_length)
 
+    NODE_HANDLE.loginfo(
+        "Interpolating points to obtain %d points..."
+        % P.path_length
+    )
+
     spline = CubicSpline(
         distance, TRAJECTORY_POINTS, axis = 0,
         bc_type = ("periodic" if CLOSED_PATH else "not-a-knot")
@@ -450,32 +460,8 @@ def _simple_trajectory():
     # Note that first and last points are repeated
     ipol_dists = numpy.hypot(xi[1:] - xi[:-1], yi[1:] - yi[:-1])
 
-    # Do a cumulative sum to obtain arc length
-    ipol_progress = numpy.hstack((0, numpy.cumsum(ipol_dists)))
-
-    # Create a new spline that serves as an arc-length approximation
-    # ipol_progress is normalized
-    spline_al = CubicSpline(
-        ipol_progress / ipol_progress[-1], alpha, axis=0
-    )
-
-    # Perform a second interpolation with adapted alpha
-    # alpha is now treated as normalized length over the spline
-    # spline_al converts alpha to 's'; a spline parameter
-    ipol = spline(spline_al(alpha))
-    xi = ipol[:, 0]
-    yi = ipol[:, 1]
-
-    # First and last points are repeated
-    dists = numpy.hypot(xi[1:] - xi[:-1], yi[1:] - yi[:-1])
-
     NODE_HANDLE.loginfo(
-        "Interpolating points to obtain %d points..."
-        % P.path_length
-    )
-
-    NODE_HANDLE.loginfo(
-        "Rough interpolation: min: %f, avg: %f, max: %f"
+        "First interpolation: min: %f, avg: %f, max: %f"
         % (
             numpy.min(ipol_dists),
             numpy.mean(ipol_dists),
@@ -483,10 +469,31 @@ def _simple_trajectory():
         )
     )
 
-    NODE_HANDLE.loginfo(
-        "Improved interpolation: min: %f, avg: %f, max: %f"
-        % (numpy.min(dists), numpy.mean(dists), numpy.max(dists))
-    )
+
+    if P.double_interpolation:
+        # Do a cumulative sum to obtain arc length
+        ipol_progress = numpy.hstack((0, numpy.cumsum(ipol_dists)))
+
+        # Create a new spline that serves as an arc-length approximation
+        # ipol_progress is normalized
+        spline_al = CubicSpline(
+            ipol_progress / ipol_progress[-1], alpha, axis=0
+        )
+
+        # Perform a second interpolation with adapted alpha
+        # alpha is now treated as normalized length over the spline
+        # spline_al converts alpha to 's'; a spline parameter
+        ipol = spline(spline_al(alpha))
+        xi = ipol[:, 0]
+        yi = ipol[:, 1]
+
+        # First and last points are repeated
+        dists = numpy.hypot(xi[1:] - xi[:-1], yi[1:] - yi[:-1])
+
+        NODE_HANDLE.loginfo(
+            "Second interpolation: min: %f, avg: %f, max: %f"
+            % (numpy.min(dists), numpy.mean(dists), numpy.max(dists))
+        )
 
     ln = xi.shape
     ln = ln[0]
