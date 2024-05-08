@@ -1087,6 +1087,7 @@ def start_node(args = None):
         'reference_path/marker', Marker, queue_size = 1, latch = True
     )
     NODE_HANDLE.map_pub = None
+    NODE_HANDLE.map_fake_pub = None
     NODE_HANDLE.infgc_pub = NODE_HANDLE.Publisher(
         'reference_path/gridcells', GridCells, queue_size = 1, latch = True
     )
