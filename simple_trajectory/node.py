@@ -105,6 +105,7 @@ from geometry_msgs.msg import (
 # Global variables
 MAP_LOADED = False
 INFLATED_MAP = False
+FAKE_TRACK_MAP = False
 _MAP = None
 MAP_HEADER = None
 MAP_INFO = None
@@ -144,6 +145,11 @@ P.update([
         "default": False,
         "description": "Publish internal cropped map.",
         "callback": lambda value: reconf_publish_cropped_map(value)
+    }),
+    ("publish_fake_track", {
+        "default": False,
+        "description": "Publish fake racing track map.",
+        "callback": lambda value: reconf_publish_fake_track(value)
     }),
     ("reload_map", {
         "default": False,
@@ -258,6 +264,29 @@ def reconf_publish_cropped_map(value):
     return value
 
 
+def reconf_publish_fake_track(value):
+    """Reconfigure callback for 'publish_fake_track'."""
+    global NODE_HANDLE
+
+    NODE_HANDLE.loginfo(
+        "Reconfigure request: publish_fake_track = %s" % value
+    )
+
+    if value and NODE_HANDLE.map_fake_pub is None:
+        NODE_HANDLE.map_fake_pub = NODE_HANDLE.Publisher(
+            'reference_path/fake_track',
+            OccupancyGrid,
+            queue_size = 1,
+            latch = True
+        )
+        publish_map()
+    elif not value and NODE_HANDLE.map_fake_pub is not None:
+        del NODE_HANDLE.map_fake_pub
+        NODE_HANDLE.map_fake_pub = None
+
+    return value
+
+
 def reconf_reload_map(value):
     """Reconfigure callback for 'reload_map'."""
     global RELOAD_MAP
@@ -330,6 +359,15 @@ def publish_map():
         map.data = list(MAP_INFLATED.flatten())
 
         NODE_HANDLE.map_pub.publish(map)
+
+    if MAP_LOADED and NODE_HANDLE.map_fake_pub is not None:
+        map = OccupancyGrid()
+        map.header = MAP_HEADER
+        map.header.stamp = NODE_HANDLE.get_clock().now().to_msg()
+        map.info = MAP_INFO
+        map.data = list(FAKE_TRACK_MAP.flatten())
+
+        NODE_HANDLE.map_fake_pub.publish(map)
 
 
 def inflate_map():
@@ -437,7 +475,7 @@ def _simple_trajectory():
     profile_trajectory/profile_trajectory.py:interpolate_points()
     """
     global TRAJECTORY_POINTS, MAP_LOADED, _MAP
-    global MAP_INFO, BOUNDS, MAP_INFLATED, CLOSED_PATH
+    global MAP_INFO, BOUNDS, MAP_INFLATED, CLOSED_PATH, FAKE_TRACK_MAP
 
     x, y = TRAJECTORY_POINTS.T
     i = numpy.arange(len(TRAJECTORY_POINTS))
@@ -640,6 +678,12 @@ def _simple_trajectory():
         NODE_HANDLE.infgc_pub.publish(gc)
 
         NODE_HANDLE.loginfo("Path inflated.")
+
+
+        # Create fake racing track map
+        FAKE_TRACK_MAP = n_map.copy()
+        FAKE_TRACK_MAP[:, :] = 100
+        FAKE_TRACK_MAP[map_walls[0], map_walls[1]] = 0
 
     return
 
