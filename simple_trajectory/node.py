@@ -153,8 +153,9 @@ P.update([
     ("path_length", {
         "default": 440,
         "min": 1,
-        "max": 2000,
+        "max": 10000,
         "description": "[points], number of points in the path.",
+        "callback": lambda value: reconf_path_length(value)
     }),
     ("double_interpolation", {
         "default": True,
@@ -264,6 +265,18 @@ def reconf_reload_map(value):
     NODE_HANDLE.loginfo("Reconfigure request: reload_map = %s" % value)
 
     RELOAD_MAP = value
+
+    return value
+
+
+def reconf_path_length(value):
+    """Reconfigure callback for 'path_length'."""
+
+    NODE_HANDLE.loginfo("Reconfigure request: path_length = %s" % value)
+
+    P.path_length = value
+
+    simple_trajectory()
 
     return value
 
