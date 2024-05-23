@@ -190,6 +190,12 @@ P.update([
             "Note: Use '\,' to set the delimiter to a comma."  # noqa: W605
         )
     }),
+    ("select_every", {
+        "default": 1, "min": 1, "max": 100,
+        "description": (
+            "Point filter for the loaded file. Select every '%d' point."
+        )
+    }),
 ])
 
 
@@ -945,12 +951,13 @@ def goal_callback(data):
     publish_trajectory_points()
 
 
-def load_data(filename, delimiter = ""):
+def load_data(filename, delimiter = "", select_every = 1):
     """Load points from a file.
 
     Arguments:
     filename -- path to a file to load, str
     delimiter -- delimiter of the data, str, defaults to ""
+    select_every -- point filter, select every %d point, defaults to 1
 
     Returns:
     success
@@ -1046,6 +1053,12 @@ def load_data(filename, delimiter = ""):
                 )
                 return False
 
+    if select_every != 1:
+        TRAJECTORY_POINTS = TRAJECTORY_POINTS[::select_every, :]
+        NODE_HANDLE.loginfo(
+            "Kept only %d points." % len(TRAJECTORY_POINTS)
+        )
+
     simple_trajectory()
 
     publish_trajectory_points()
@@ -1102,7 +1115,8 @@ def start_node(args = None):
         if NODE_HANDLE.has_param("~input_file"):
             loaded = load_data(
                 str(NODE_HANDLE.get_param("~input_file")),
-                str(NODE_HANDLE.get_param("~delimiter", ""))
+                str(NODE_HANDLE.get_param("~delimiter", "")),
+                int(NODE_HANDLE.get_param("~select_every", 1))
             )
 
             P.input_file = (
@@ -1110,6 +1124,7 @@ def start_node(args = None):
                 if loaded else ""
             )
             P.delimiter = NODE_HANDLE.get_param("~delimiter", "")
+            P.select_every = NODE_HANDLE.get_param("~select_every", 1)
 
 
     # Dynamic reconfigure
@@ -1123,7 +1138,8 @@ def start_node(args = None):
 
         loaded = load_data(
             NODE_HANDLE.get_parameter("input_file").value,
-            NODE_HANDLE.get_parameter("delimiter").value
+            NODE_HANDLE.get_parameter("delimiter").value,
+            NODE_HANDLE.get_parameter("select_every").value
         )
 
         P.input_file = (
@@ -1131,6 +1147,7 @@ def start_node(args = None):
             if loaded else ""
         )
         P.delimiter = NODE_HANDLE.get_parameter("delimiter").value
+        P.select_every = NODE_HANDLE.get_parameter("select_every").value
 
 
     Core.spin(NODE_HANDLE)
