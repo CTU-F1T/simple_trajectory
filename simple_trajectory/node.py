@@ -569,6 +569,15 @@ def _simple_trajectory():
 
 
     if P.double_interpolation:
+        # TODO: Issues with high curvature on the path end is caused
+        #       by the double interpolation. Probably the lack of the
+        #       bc_type='periodic'. However, it cannot be put there.
+        #       How to solve it?
+        NODE_HANDLE.logwarn(
+            "Using double interpolation. Note that currently this may "
+            "lead to excessive curvature near the end/start of the line."
+        )
+
         # Do a cumulative sum to obtain arc length
         ipol_progress = numpy.hstack((0, numpy.cumsum(ipol_dists)))
 
