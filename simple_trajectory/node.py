@@ -315,7 +315,6 @@ def reconf_reload_map(value):
 
 def reconf_path_length(value):
     """Reconfigure callback for 'path_length'."""
-
     NODE_HANDLE.loginfo("Reconfigure request: path_length = %s" % value)
 
     P.path_length = value
@@ -1170,7 +1169,7 @@ def start_node(args = None):
 
     # Obtain parameters
     # They are not yet implemented, so we need to do this ourselves.
-    if ROS_VERSION == 1:
+    if ROS_VERSION == 1:  # TODO: get_param(~) update
         if NODE_HANDLE.has_param("~closed_path"):
             CLOSED_PATH = bool(NODE_HANDLE.get_param("~closed_path"))
 
