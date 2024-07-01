@@ -539,8 +539,8 @@ def _simple_trajectory():
     alpha = numpy.linspace(0, 1, P.path_length)
 
     NODE_HANDLE.loginfo(
-        "Interpolating points to obtain %d points..."
-        % P.path_length
+        "Interpolating points using %s to obtain %d points..."
+        % (("periodic" if CLOSED_PATH else "not-a-knot"), P.path_length)
     )
 
     spline = CubicSpline(
