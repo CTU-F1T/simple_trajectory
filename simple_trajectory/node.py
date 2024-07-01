@@ -174,7 +174,8 @@ P.update([
         "default": False,
         "description": (
             "Type of path received on topic / loaded from a file."
-        )
+        ),
+        "callback": lambda value: reconf_closed_path(value)
     }),
 
     # Loading data from a file
@@ -320,6 +321,17 @@ def reconf_path_length(value):
     P.path_length = value
 
     simple_trajectory()
+
+    return value
+
+
+def reconf_closed_path(value):
+    """Reconfigure callback for 'closed_path'."""
+    global CLOSED_PATH
+
+    NODE_HANDLE.loginfo("Reconfigure request: closed_path = %s" % value)
+
+    CLOSED_PATH = value
 
     return value
 
