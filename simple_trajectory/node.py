@@ -196,6 +196,14 @@ P.update([
             "Point filter for the loaded file. Select every '%d' point."
         )
     }),
+    ("input_data", {
+        "default": "",
+        "description": (
+            "Input string containing points. Coordinates are delimited "
+            "by comma, points by semicolon."
+        ),
+        "callback": lambda value: reconf_input_data(value)
+    }),
 ])
 
 
@@ -329,6 +337,39 @@ def reconf_input_file(value):
         return value
     else:
         return P.input_file.value
+
+
+def reconf_input_data(value):
+    """Reconfigure callback for 'input_data'."""
+    global TRAJECTORY_POINTS, TRAJECTORY_DONE
+
+    NODE_HANDLE.loginfo("Reconfigure request: input_data = %s" % value)
+
+    ret = False
+
+    try:
+        _points = numpy.asarray([
+            [float(x) for x in line.split(",")] for line in value.split(";")
+        ])
+        print (_points)
+        print(_points.shape)
+        NODE_HANDLE.loginfo("Received '%d' points." % len(_points))
+        ret = True
+
+        TRAJECTORY_POINTS = _points.copy()
+        TRAJECTORY_DONE = True
+
+        simple_trajectory()
+
+        publish_trajectory_points()
+
+    except Exception as e:
+        NODE_HANDLE.logwarn(e)
+
+    if ret:
+        return value
+    else:
+        return P.input_data.value
 
 
 ######################
