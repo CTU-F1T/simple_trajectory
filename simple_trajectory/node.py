@@ -164,7 +164,7 @@ P.update([
         "callback": lambda value: reconf_path_length(value)
     }),
     ("double_interpolation", {
-        "default": True,
+        "default": False,
         "description": "Perform a double interpolation to obtain truly "
                        "equidistant path points.",
     }),
